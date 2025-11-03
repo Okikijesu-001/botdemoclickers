@@ -209,7 +209,7 @@
     const errorMsg = document.getElementById('error-msg');
 
     // -------------------------------
-    // Helpers added (formatting + caret-preserve)
+    // Helpers added (formatting + caret-preserve + composition handling)
     // -------------------------------
     // format number string with commas (preserves decimals)
     function formatWithCommas(str){
@@ -241,6 +241,11 @@
     }
 
     // Format input value and preserve caret position while adding commas live.
+    // This function now:
+    //  - computes caret in raw (non-comma) coords
+    //  - sets formatted value
+    //  - updates caret asynchronously using requestAnimationFrame + setTimeout fallback
+    //  - only applies caret if input is still focused
     function formatInputLivePreserveCaret(inputEl){
       const old = inputEl.value || '';
       const oldCaret = inputEl.selectionStart || 0;
@@ -286,17 +291,35 @@
         // If caret was at very start, put caret after any leading sign if present.
         newCaret = formatted.startsWith('-') ? 1 : 0;
       }
-      // ensure caret in bounds
       if (newCaret < 0) newCaret = 0;
       if (newCaret > formatted.length) newCaret = formatted.length;
 
-      // set caret
-      try {
-        inputEl.setSelectionRange(newCaret, newCaret);
-      } catch (e) {
-        // some browsers may throw if element not focused; ignore
+      // set caret asynchronously so mobile IME selection updates settle first
+      function applyCaret(){
+        if (document.activeElement === inputEl) {
+          try { inputEl.setSelectionRange(newCaret, newCaret); } catch (e) { /* ignore */ }
+        }
+      }
+      // try RAF first, then setTimeout fallback
+      if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(()=>{
+          // small timeout inside RAF to accommodate some mobile timing quirks
+          setTimeout(applyCaret, 0);
+        });
+      } else {
+        setTimeout(applyCaret, 0);
       }
     }
+
+    // -------------------------------
+    // Composition flags for inputs (to avoid formatting while IME composing)
+    // -------------------------------
+    let fromComposing = false;
+    let toComposing = false;
+    fromInput.addEventListener('compositionstart', ()=>{ fromComposing = true; });
+    fromInput.addEventListener('compositionend', (e)=>{ fromComposing = false; /* format now that composition ended */ formatInputLivePreserveCaret(fromInput); });
+    toInput.addEventListener('compositionstart', ()=>{ toComposing = true; });
+    toInput.addEventListener('compositionend', (e)=>{ toComposing = false; formatInputLivePreserveCaret(toInput); });
 
     // -------------------------------
     // Populate selects
@@ -490,28 +513,30 @@
 
     // Live-formatting input while preserving caret
     fromInput.addEventListener('input', (e)=>{
-      // apply live formatting + caret preservation
-      formatInputLivePreserveCaret(e.target);
-
+      // if IME composition in progress, don't format immediately
+      if (!fromComposing) {
+        formatInputLivePreserveCaret(e.target);
+      }
       // mark editing and debounce conversions as before
       userEditing = 'from';
       debounceConvert(async ()=>{ await convertFromTo(); userEditing = null; }, 180);
     });
 
     toInput.addEventListener('input', (e)=>{
-      formatInputLivePreserveCaret(e.target);
+      if (!toComposing) {
+        formatInputLivePreserveCaret(e.target);
+      }
       userEditing = 'to';
       debounceConvert(async ()=>{ await convertToFrom(); userEditing = null; }, 180);
     });
 
     // Format inputs when user focuses (clicks) the amount or when result is written.
     // When focusing: format the current numeric value with commas for readability.
-    // When blur: leave as-is (user may continue editing), but we also ensure displayed formatting is consistent.
+    // When blur: keep formatted view.
     function tryFormatInputIfNumber(inputEl){
       const raw = (inputEl.value || '').trim();
       const n = parseNumberFromInput(raw);
       if (!isNaN(n)) {
-        // show formatted with commas (preserve any decimals)
         inputEl.value = formatWithCommas(unformat(formatNumber(n)));
       }
     }
