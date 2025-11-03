@@ -317,9 +317,9 @@
     let fromComposing = false;
     let toComposing = false;
     fromInput.addEventListener('compositionstart', ()=>{ fromComposing = true; });
-    fromInput.addEventListener('compositionend', (e)=>{ fromComposing = false; /* format now that composition ended */ formatInputLivePreserveCaret(fromInput); });
+    fromInput.addEventListener('compositionend', (e)=>{ fromComposing = false; /* format now that composition ended */ setTimeout(() => formatInputLivePreserveCaret(fromInput), 0); });
     toInput.addEventListener('compositionstart', ()=>{ toComposing = true; });
-    toInput.addEventListener('compositionend', (e)=>{ toComposing = false; formatInputLivePreserveCaret(toInput); });
+    toInput.addEventListener('compositionend', (e)=>{ toComposing = false; setTimeout(() => formatInputLivePreserveCaret(toInput), 0); });
 
     // -------------------------------
     // Populate selects
@@ -515,7 +515,7 @@
     fromInput.addEventListener('input', (e)=>{
       // if IME composition in progress, don't format immediately
       if (!fromComposing) {
-        formatInputLivePreserveCaret(e.target);
+        setTimeout(() => formatInputLivePreserveCaret(e.target), 0);
       }
       // mark editing and debounce conversions as before
       userEditing = 'from';
@@ -524,7 +524,7 @@
 
     toInput.addEventListener('input', (e)=>{
       if (!toComposing) {
-        formatInputLivePreserveCaret(e.target);
+        setTimeout(() => formatInputLivePreserveCaret(e.target), 0);
       }
       userEditing = 'to';
       debounceConvert(async ()=>{ await convertToFrom(); userEditing = null; }, 180);
