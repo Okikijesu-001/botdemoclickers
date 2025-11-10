@@ -2,9 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- tightened viewport to prevent automatic zooming on mobile -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <title>Visit Task</title>
 <style>
+  /* Prevent mobile browsers from auto-adjusting font sizes */
+  html, body {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   /* Global page styling (valid UI) */
   body, html {
     margin: 0;
@@ -15,11 +23,11 @@
     color: #000;
   }
 
-  /* Top banner for valid task - changed to black background and white text */
+  /* Top banner for valid task - black background and white text */
   .top-banner {
     width: 100%;
-    background: #000; /* changed to black */
-    color: #fff;       /* changed to white text */
+    background: #000;
+    color: #fff;
     box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     padding: 18px 20px;
     font-weight: 700;
@@ -45,6 +53,7 @@
     display: flex;
     gap: 12px;
     align-items: stretch;
+    position: relative;
   }
 
   /* Preview only - nothing else below the banner */
@@ -55,18 +64,48 @@
     border: 1px solid #e6e6e6;
     min-height: 200px;
     background: #fff;
+    position: relative;
   }
 
   .preview iframe {
     width: 100%;
     height: 100%;
     border: 0;
+    display: block;
+  }
+
+  /* Overlay message shown only if embedding is blocked */
+  .preview-overlay {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    z-index: 60;
+  }
+
+  .preview-overlay a {
+    background: #fff;
+    color: #000;
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 700;
   }
 
   /* Keep responsive behavior */
   @media (max-width: 720px) {
     .frame-wrap { flex-direction: column; }
     .container { height: auto; min-height: calc(100vh - 72px); }
+    .preview-overlay { left: 10px; right: 10px; bottom: 10px; font-size: 13px; }
   }
 
   /* ---------- INVALID DESIGN (exactly preserved) ---------- */
@@ -248,6 +287,7 @@
           <div class="frame-wrap">
             <div class="preview" id="previewFrameWrap">
               <iframe id="previewIframe" src="${escapeHtml(redirectUrl)}" title="Preview"></iframe>
+              <!-- overlay will be inserted here by JS if embedding is blocked -->
             </div>
           </div>
         </div>
@@ -269,6 +309,62 @@
         }
         bannerCountdownEl.textContent = secondsLeft;
       }, 1000);
+
+      // ---------- Detect if iframe embedding is blocked ----------
+      // Many sites set X-Frame-Options or CSP so the iframe can't load. We detect that and show a small overlay
+      // with an "Open in new tab" link. Detection strategy:
+      //  - wait for load event or timeout,
+      //  - then attempt to access iframe.contentDocument; if access throws or doc is null => blocked.
+      const iframe = document.getElementById('previewIframe');
+      let loadOrTimeoutFired = false;
+
+      function showBlockedOverlay() {
+        // if overlay already exists, do nothing
+        if (document.getElementById('previewOverlay')) return;
+        const wrap = document.getElementById('previewFrameWrap');
+        const overlay = document.createElement('div');
+        overlay.id = 'previewOverlay';
+        overlay.className = 'preview-overlay';
+        overlay.innerHTML = `
+          <div>Preview blocked or prevented by the site. Use "Open in new tab" to view.</div>
+          <a id="openTabBtn" href="${escapeHtml(redirectUrl)}" target="_blank" rel="noopener noreferrer">Open in new tab</a>
+        `;
+        wrap.appendChild(overlay);
+      }
+
+      // Handler to check if blocked
+      function checkIframeBlocked() {
+        try {
+          // Accessing contentDocument/contentWindow of cross-origin frames will throw or return null;
+          // that's a reliable sign embedding is not allowed.
+          const doc = iframe.contentDocument || iframe.contentWindow.document;
+          // Some browsers set a minimal doc even when blocked — check for URL equality or doc.body size
+          if (!doc || !doc.body || doc.body.childElementCount === 0) {
+            // Could be blocked or remote page hasn't painted; show overlay after short grace
+            showBlockedOverlay();
+            return;
+          }
+          // If we get here, the iframe loaded something (may be cross-origin but not blocked). We won't modify UI.
+        } catch (err) {
+          // access denied => blocked by X-Frame-Options/CSP
+          showBlockedOverlay();
+        }
+      }
+
+      // If load fires, check quickly
+      iframe.addEventListener('load', function () {
+        loadOrTimeoutFired = true;
+        // small delay to allow rendering
+        setTimeout(checkIframeBlocked, 250);
+      });
+
+      // Also use a timeout: if no load event within 3000ms, assume blocked or slow and show overlay (less aggressive)
+      setTimeout(function () {
+        if (!loadOrTimeoutFired) {
+          // try one check; if blocked or cross-origin denies access, overlay will appear
+          checkIframeBlocked();
+        }
+      }, 3000);
 
       // When countdown reaches zero, call webhook API and redirect
       let alreadyCompleted = false;
