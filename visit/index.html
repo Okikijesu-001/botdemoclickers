@@ -23,7 +23,7 @@
     width: 100%;
     background: #000;
     color: #fff;
-    padding: 18px 20px;
+    padding: 14px 20px;            /* slightly adjusted padding so two lines fit better */
     font-weight: 700;
     font-size: 18px;
     text-align: center;
@@ -31,7 +31,13 @@
     top: 0;
     left: 0;
     z-index: 1000;
-    white-space: normal;
+
+    /* ---- fixes for the missing "to" / wrap problem ---- */
+    white-space: normal;          /* allow wrapping onto multiple lines */
+    line-height: 1.05;            /* tighter line-height so wrapped lines fit in banner */
+    word-break: break-word;       /* avoid unexpected overflow for long tokens */
+    box-sizing: border-box;
+    /* --------------------------------------------------- */
   }
 
   /* The iframe now fills all space below the banner */
