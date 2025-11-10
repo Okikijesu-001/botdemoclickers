@@ -31,12 +31,13 @@
     top: 0;
     left: 0;
     z-index: 1000;
+    white-space: normal;
   }
 
-  /* The iframe now fills all space below the banner; top will be adjusted at runtime */
+  /* The iframe now fills all space below the banner */
   .preview {
     position: fixed;
-    top: 60px; /* default - adjusted in JS to banner height */
+    top: 60px; /* banner height */
     left: 0;
     right: 0;
     bottom: 0;
@@ -87,7 +88,6 @@
     text-decoration: none;
     font-weight: 800;
   }
-  .invalid-center-message a:hover { text-decoration: underline; }
   .invalid-telegram-line {
     display: flex;
     align-items: center;
@@ -119,7 +119,7 @@ const INVALID_LINES = [
   "Nothing To Do Here!",
   "Join My Bot To Get",
   "Visit Site Task And",
-  "Earn Real Money.",
+  "Earn Real Money",
   "@mybot"
 ];
 function startInvalidTyping() {
@@ -182,25 +182,10 @@ function renderValidUI({ taskId, duration, redirectUrl, webhook }) {
   const root = document.getElementById('appRoot');
   root.innerHTML = `
     <div class="top-banner">
-      Stay on this page for at least <span id="countdownBanner">${escapeHtml(String(duration))}</span> Seconds\nto complete the task
+      Stay on this page for at least <span id="countdownBanner">${escapeHtml(String(duration))}</span> Seconds to complete the task
     </div>
     <iframe class="preview" src="${escapeHtml(redirectUrl)}" title="Preview"></iframe>
   `;
-
-  // ====== Only change: ensure iframe doesn't overlap banner ======
-  // compute banner's real height and apply to iframe positioning so banner text ("to") is never covered
-  const bannerEl = document.querySelector('.top-banner');
-  const iframeEl = document.querySelector('.preview');
-  if (bannerEl && iframeEl) {
-    // use getBoundingClientRect to include any device rounding
-    const bannerRect = bannerEl.getBoundingClientRect();
-    const bannerHeight = Math.ceil(bannerRect.height);
-    // set iframe top and height so it starts right below the banner
-    iframeEl.style.top = bannerHeight + 'px';
-    iframeEl.style.height = `calc(100vh - ${bannerHeight}px)`;
-  }
-  // ====== End of only change ======
-
   let secondsLeft = parseInt(duration, 10);
   const bannerCountdownEl = document.getElementById('countdownBanner');
   const interval = setInterval(() => {
