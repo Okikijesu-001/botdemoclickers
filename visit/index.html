@@ -2,25 +2,22 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<!-- tightened viewport to prevent automatic zooming on mobile -->
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<!-- Improved mobile portability -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Visit Task</title>
 <style>
-  /* Prevent mobile browsers from auto-adjusting font sizes */
-  html, body {
-    -webkit-text-size-adjust: 100%;
-    -ms-text-size-adjust: 100%;
-    text-size-adjust: 100%;
-  }
-
   /* Global page styling (valid UI) */
-  body, html {
+  html, body {
     margin: 0;
     padding: 0;
     height: 100%;
+    width: 100%;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     background: #fff;
     color: #000;
+    -webkit-text-size-adjust: 100%; /* prevent mobile browsers from auto-scaling text */
+    -ms-text-size-adjust: 100%;
+    box-sizing: border-box;
   }
 
   /* Top banner for valid task - black background and white text */
@@ -38,33 +35,31 @@
     z-index: 1000;
   }
 
-  /* Container now only holds preview area under banner */
+  /* Container holds the full-height preview under banner */
   .container {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 72px);
-    gap: 12px;
-    padding: 12px;
+    min-height: calc(100vh - 72px);
+    gap: 0;
+    padding: 0;
     box-sizing: border-box;
   }
 
   .frame-wrap {
     flex: 1;
     display: flex;
-    gap: 12px;
+    gap: 0;
     align-items: stretch;
-    position: relative;
   }
 
-  /* Preview only - nothing else below the banner */
+  /* PREVIEW: no box, no borders, just the iframe filling the area */
   .preview {
     flex: 1;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid #e6e6e6;
     min-height: 200px;
-    background: #fff;
-    position: relative;
+    border: 0;            /* removed border */
+    border-radius: 0;     /* removed radius */
+    overflow: hidden;
+    background: transparent; /* transparent so only iframe shows */
   }
 
   .preview iframe {
@@ -74,38 +69,10 @@
     display: block;
   }
 
-  /* Overlay message shown only if embedding is blocked */
-  .preview-overlay {
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-    background: rgba(0,0,0,0.7);
-    color: #fff;
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    z-index: 60;
-  }
-
-  .preview-overlay a {
-    background: #fff;
-    color: #000;
-    padding: 6px 10px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 700;
-  }
-
   /* Keep responsive behavior */
   @media (max-width: 720px) {
     .frame-wrap { flex-direction: column; }
-    .container { height: auto; min-height: calc(100vh - 72px); }
-    .preview-overlay { left: 10px; right: 10px; bottom: 10px; font-size: 13px; }
+    .container { min-height: calc(100vh - 72px); }
   }
 
   /* ---------- INVALID DESIGN (exactly preserved) ---------- */
@@ -277,17 +244,16 @@
     // ---------- Render valid UI (when token is decoded & validated) ----------
     function renderValidUI({ taskId, duration, redirectUrl, webhook }) {
       const root = document.getElementById('appRoot');
-      // Build valid UI HTML - only the banner and the preview iframe below (nothing else)
+      // Build valid UI HTML - only the banner and the preview iframe below (only iframe visible)
       root.innerHTML = `
         <div class="top-banner">
-          Stay on this page for at least <span id="countdownBanner">${escapeHtml(duration)}</span> Seconds to complete the task
+          Stay on this page for at least <span id="countdownBanner">${escapeHtml(String(duration))}</span> Seconds to complete the task
         </div>
 
         <div class="container">
           <div class="frame-wrap">
             <div class="preview" id="previewFrameWrap">
               <iframe id="previewIframe" src="${escapeHtml(redirectUrl)}" title="Preview"></iframe>
-              <!-- overlay will be inserted here by JS if embedding is blocked -->
             </div>
           </div>
         </div>
@@ -309,62 +275,6 @@
         }
         bannerCountdownEl.textContent = secondsLeft;
       }, 1000);
-
-      // ---------- Detect if iframe embedding is blocked ----------
-      // Many sites set X-Frame-Options or CSP so the iframe can't load. We detect that and show a small overlay
-      // with an "Open in new tab" link. Detection strategy:
-      //  - wait for load event or timeout,
-      //  - then attempt to access iframe.contentDocument; if access throws or doc is null => blocked.
-      const iframe = document.getElementById('previewIframe');
-      let loadOrTimeoutFired = false;
-
-      function showBlockedOverlay() {
-        // if overlay already exists, do nothing
-        if (document.getElementById('previewOverlay')) return;
-        const wrap = document.getElementById('previewFrameWrap');
-        const overlay = document.createElement('div');
-        overlay.id = 'previewOverlay';
-        overlay.className = 'preview-overlay';
-        overlay.innerHTML = `
-          <div>Preview blocked or prevented by the site. Use "Open in new tab" to view.</div>
-          <a id="openTabBtn" href="${escapeHtml(redirectUrl)}" target="_blank" rel="noopener noreferrer">Open in new tab</a>
-        `;
-        wrap.appendChild(overlay);
-      }
-
-      // Handler to check if blocked
-      function checkIframeBlocked() {
-        try {
-          // Accessing contentDocument/contentWindow of cross-origin frames will throw or return null;
-          // that's a reliable sign embedding is not allowed.
-          const doc = iframe.contentDocument || iframe.contentWindow.document;
-          // Some browsers set a minimal doc even when blocked — check for URL equality or doc.body size
-          if (!doc || !doc.body || doc.body.childElementCount === 0) {
-            // Could be blocked or remote page hasn't painted; show overlay after short grace
-            showBlockedOverlay();
-            return;
-          }
-          // If we get here, the iframe loaded something (may be cross-origin but not blocked). We won't modify UI.
-        } catch (err) {
-          // access denied => blocked by X-Frame-Options/CSP
-          showBlockedOverlay();
-        }
-      }
-
-      // If load fires, check quickly
-      iframe.addEventListener('load', function () {
-        loadOrTimeoutFired = true;
-        // small delay to allow rendering
-        setTimeout(checkIframeBlocked, 250);
-      });
-
-      // Also use a timeout: if no load event within 3000ms, assume blocked or slow and show overlay (less aggressive)
-      setTimeout(function () {
-        if (!loadOrTimeoutFired) {
-          // try one check; if blocked or cross-origin denies access, overlay will appear
-          checkIframeBlocked();
-        }
-      }, 3000);
 
       // When countdown reaches zero, call webhook API and redirect
       let alreadyCompleted = false;
@@ -390,7 +300,7 @@
       }
     }
 
-    // ---------- Main: parse ?token=... and decide ---------- 
+    // ---------- Main: parse ?token=... and decide ----------
     (function main(){
       const params = new URLSearchParams(window.location.search);
       const token = params.get('token');
@@ -410,17 +320,25 @@
         return;
       }
 
-      // Expected format: taskId#-#duration_in_seconds#-#redirectUrl#-#webhook
+      // New expected format:
+      // password#-#taskId#-#duration_in_seconds#-#redirectUrl#-#webhook
       const parts = decoded.split('#-#');
-      if (!parts || parts.length !== 4) {
+      if (!parts || parts.length !== 5) {
         showInvalid();
         return;
       }
 
-      const taskId = (parts[0] || '').trim();
-      const durationStr = (parts[1] || '').trim();
-      const redirectUrl = (parts[2] || '').trim();
-      const webhook = (parts[3] || '').trim();
+      const password = (parts[0] || '').trim();
+      const taskId = (parts[1] || '').trim();
+      const durationStr = (parts[2] || '').trim();
+      const redirectUrl = (parts[3] || '').trim();
+      const webhook = (parts[4] || '').trim();
+
+      // verify password
+      if (password !== 'anonYmous') {
+        showInvalid();
+        return;
+      }
 
       const duration = parseInt(durationStr, 10);
       const validDuration = Number.isInteger(duration) && duration > 0;
@@ -439,3 +357,4 @@
   </script>
 </body>
 </html>
+
