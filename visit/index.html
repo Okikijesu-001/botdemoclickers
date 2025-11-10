@@ -15,11 +15,11 @@
     color: #000;
   }
 
-  /* Top banner for valid task */
+  /* Top banner for valid task - changed to black background and white text */
   .top-banner {
     width: 100%;
-    background: #ffffff;
-    color: #000;
+    background: #000; /* changed to black */
+    color: #fff;       /* changed to white text */
     box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     padding: 18px 20px;
     font-weight: 700;
@@ -30,6 +30,7 @@
     z-index: 1000;
   }
 
+  /* Container now only holds preview area under banner */
   .container {
     display: flex;
     flex-direction: column;
@@ -46,6 +47,7 @@
     align-items: stretch;
   }
 
+  /* Preview only - nothing else below the banner */
   .preview {
     flex: 1;
     border-radius: 12px;
@@ -61,74 +63,13 @@
     border: 0;
   }
 
-  .controls {
-    width: 320px;
-    max-width: 40%;
-    min-width: 220px;
-    border: 1px solid #eee;
-    padding: 12px;
-    border-radius: 10px;
-    background: #fafafa;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    align-items: stretch;
-  }
-
-  .count {
-    font-size: 36px;
-    font-weight: 800;
-    text-align: center;
-  }
-
-  .progress {
-    height: 12px;
-    background: #eee;
-    border-radius: 999px;
-    overflow: hidden;
-  }
-
-  .progress > i {
-    display: block;
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, rgba(0,0,0,0.08), rgba(0,0,0,0.18));
-    transition: width 0.3s linear;
-  }
-
-  .small {
-    font-size: 13px;
-    color: #333;
-  }
-
-  .open-btn {
-    display: inline-block;
-    text-decoration: none;
-    border: 0;
-    background: #000;
-    color: #fff;
-    padding: 8px 12px;
-    border-radius: 8px;
-    text-align: center;
-    font-weight: 700;
-  }
-
-  .note {
-    font-size: 12px;
-    color: #666;
-  }
-
-  /* Make things responsive */
+  /* Keep responsive behavior */
   @media (max-width: 720px) {
     .frame-wrap { flex-direction: column; }
-    .controls { width: 100%; max-width: none; }
     .container { height: auto; min-height: calc(100vh - 72px); }
   }
 
   /* ---------- INVALID DESIGN (exactly preserved) ---------- */
-  /* We'll inject this block's CSS exactly when showing INVALID, so
-     it must match your original design. To avoid collisions we prefix it. */
   .invalid-root { all: initial; box-sizing: border-box; }
   .invalid-root * { box-sizing: border-box; }
   .invalid-body {
@@ -291,17 +232,16 @@
       const root = document.getElementById('appRoot');
       root.innerHTML = INVALID_MARKUP;
       // Start the typing effect
-      // small timeout to ensure DOM is painted
       setTimeout(startInvalidTyping, 20);
     }
 
     // ---------- Render valid UI (when token is decoded & validated) ----------
     function renderValidUI({ taskId, duration, redirectUrl, webhook }) {
       const root = document.getElementById('appRoot');
-      // Build valid UI HTML
+      // Build valid UI HTML - only the banner and the preview iframe below (nothing else)
       root.innerHTML = `
         <div class="top-banner">
-          Stay on this page for at least <span id="durationDisplay">${escapeHtml(duration)}</span> Seconds to complete the task
+          Stay on this page for at least <span id="countdownBanner">${escapeHtml(duration)}</span> Seconds to complete the task
         </div>
 
         <div class="container">
@@ -309,80 +249,26 @@
             <div class="preview" id="previewFrameWrap">
               <iframe id="previewIframe" src="${escapeHtml(redirectUrl)}" title="Preview"></iframe>
             </div>
-
-            <div class="controls">
-              <div class="small">Task ID</div>
-              <div class="note" style="word-break:break-word;">${escapeHtml(taskId)}</div>
-
-              <div class="small">Webhook</div>
-              <div class="note" style="word-break:break-all;">${escapeHtml(webhook)}</div>
-
-              <div style="height:8px;"></div>
-
-              <div class="small">Countdown</div>
-              <div class="count" id="countdown">${escapeHtml(duration)}</div>
-
-              <div class="progress" aria-hidden="true">
-                <i id="progressBar"></i>
-              </div>
-
-              <div style="display:flex; gap:8px; justify-content:space-between; align-items:center;">
-                <a class="open-btn" id="openNewBtn" target="_blank" rel="noopener noreferrer" href="${escapeHtml(redirectUrl)}">Open in new tab</a>
-                <button id="forceComplete" class="open-btn" style="background:#777;">Complete Now</button>
-              </div>
-
-              <div class="note">If the site blocks embedding, use "Open in new tab".</div>
-            </div>
           </div>
         </div>
       `;
 
-      // Start countdown immediately (or if you prefer, wait for iframe load — adjust below)
+      // Start countdown and update the banner countdown element
       let secondsLeft = parseInt(duration, 10);
-      const countdownEl = document.getElementById('countdown');
-      const progressEl = document.getElementById('progressBar');
-      const durationDisplay = document.getElementById('durationDisplay');
+      const bannerCountdownEl = document.getElementById('countdownBanner');
 
-      durationDisplay.textContent = duration;
-      updateProgress();
+      bannerCountdownEl.textContent = secondsLeft;
 
-      // option: start only after iframe load (uncomment to enable)
-      // document.getElementById('previewIframe').addEventListener('load', () => { startInterval(); });
-
-      // by default start immediately:
-      startInterval();
-
-      function startInterval() {
-        // avoid starting multiple intervals
-        if (window._visitIntervalStarted) return;
-        window._visitIntervalStarted = true;
-
-        const interval = setInterval(() => {
-          secondsLeft--;
-          if (secondsLeft < 0) {
-            clearInterval(interval);
-            completeTask();
-            return;
-          }
-          countdownEl.textContent = secondsLeft;
-          updateProgress();
-        }, 1000);
-
-        // Force complete button (in case iframe loads slowly / user wants to force)
-        document.getElementById('forceComplete').addEventListener('click', () => {
-          // Immediately stop timer and complete
-          secondsLeft = 0;
-          countdownEl.textContent = 0;
-          progressEl.style.width = '100%';
-          // small timeout to allow UI update
-          setTimeout(completeTask, 200);
-        });
-      }
-
-      function updateProgress() {
-        const percent = Math.round(((duration - secondsLeft) / duration) * 100);
-        progressEl.style.width = (percent < 0 ? 0 : percent) + '%';
-      }
+      // Start timer
+      const interval = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft < 0) {
+          clearInterval(interval);
+          completeTask();
+          return;
+        }
+        bannerCountdownEl.textContent = secondsLeft;
+      }, 1000);
 
       // When countdown reaches zero, call webhook API and redirect
       let alreadyCompleted = false;
@@ -390,7 +276,6 @@
         if (alreadyCompleted) return;
         alreadyCompleted = true;
 
-        // POST exactly as you requested:
         try {
           await fetch('/api/send', {
             method: 'POST',
@@ -398,11 +283,9 @@
             body: JSON.stringify({ webhook, data: { id: taskId } })
           });
         } catch (err) {
-          // swallow errors (server unreachable etc.) — still redirect
           console.error('Error sending webhook:', err);
         }
 
-        // finally redirect user to redirectUrl
         try {
           window.location.href = redirectUrl;
         } catch (e) {
@@ -427,7 +310,6 @@
       try {
         decoded = safeAtob(token);
       } catch (e) {
-        // invalid base64 -> show INVALID
         showInvalid();
         return;
       }
