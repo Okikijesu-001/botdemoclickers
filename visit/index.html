@@ -19,39 +19,56 @@
     overflow: hidden;
   }
 
+  /* Banner: centered, two lines, safe padding so text never clips */
   .top-banner {
     width: 100%;
     background: #000;
     color: #fff;
-    padding: 18px 20px;
+    /* more horizontal padding so text doesn't butt up against device UI */
+    padding: 18px 28px;
     font-weight: 700;
     font-size: 18px;
     text-align: center;
+
+    /* Use flex column so the text lines are perfectly centered vertically and horizontally */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
     position: fixed;
     top: 0;
     left: 0;
     z-index: 1000;
+
+    /* allow wrapping and tighten spacing between wrapped lines */
     white-space: normal;
-    line-height: 1.4;
+    line-height: 1.2;
+
+    /* make sure padding is included in width calculations */
+    box-sizing: border-box;
+
+    /* ensure banner is tall enough for two lines on small devices */
+    min-height: 72px;
   }
 
-  /* Small defensive rule so "Seconds" never loses its last character */
+  /* Defensive: keep "Seconds" from being clipped by giving it a little extra right padding */
   .top-banner .seconds {
     display: inline-block;
-    padding-right: 6px; /* ensures the final glyph has breathing room */
+    padding-right: 10px; /* breathing room for the final glyph */
     box-sizing: border-box;
   }
 
-  /* The iframe now fills all space below the banner */
+  /* The iframe now fills all space below the banner (match min-height) */
   .preview {
     position: fixed;
-    top: 70px;
+    top: 72px; /* matches banner min-height so content sits below it */
     left: 0;
     right: 0;
     bottom: 0;
     border: none;
     width: 100%;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 72px);
     background: #000;
   }
 
