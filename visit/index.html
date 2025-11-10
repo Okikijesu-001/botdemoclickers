@@ -19,50 +19,59 @@
     overflow: hidden;
   }
 
-  /* Banner: centered, two lines, safe padding so text never clips */
+  /* Banner: two stacked lines, first line stays single-line and has horizontal breathing room */
   .top-banner {
     width: 100%;
     background: #000;
     color: #fff;
-    /* more horizontal padding so text doesn't butt up against device UI */
-    padding: 18px 28px;
+    padding: 12px 24px;           /* comfortable vertical and horizontal padding */
     font-weight: 700;
     font-size: 18px;
-    text-align: center;
-
-    /* Use flex column so the text lines are perfectly centered vertically and horizontally */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
     position: fixed;
     top: 0;
     left: 0;
     z-index: 1000;
 
-    /* allow wrapping and tighten spacing between wrapped lines */
-    white-space: normal;
-    line-height: 1.2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 
-    /* make sure padding is included in width calculations */
     box-sizing: border-box;
-
-    /* ensure banner is tall enough for two lines on small devices */
-    min-height: 72px;
+    min-height: 72px;            /* ensures the banner is tall enough for two lines */
   }
 
-  /* Defensive: keep "Seconds" from being clipped by giving it a little extra right padding */
+  /* First line: force single line, center text, and keep space at left/right */
+  .top-banner .first-line {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 32px;             /* ensure left and right breathing room like your screenshot */
+    text-align: center;
+    white-space: nowrap;         /* keep the whole "Stay on this page..." on one line */
+    overflow: hidden;            /* prevent overflow from breaking layout */
+    text-overflow: clip;
+    line-height: 1.1;
+  }
+
+  /* Make sure "Seconds" has a little extra space after it so its final glyph won't clip */
   .top-banner .seconds {
     display: inline-block;
-    padding-right: 10px; /* breathing room for the final glyph */
+    padding-right: 10px;
     box-sizing: border-box;
   }
 
-  /* The iframe now fills all space below the banner (match min-height) */
+  /* Second line sits below, centered */
+  .top-banner .second-line {
+    width: 100%;
+    padding: 4px 32px 0;         /* match horizontal breathing room */
+    text-align: center;
+    line-height: 1.1;
+  }
+
+  /* The iframe now fills all space below the banner */
   .preview {
     position: fixed;
-    top: 72px; /* matches banner min-height so content sits below it */
+    top: 72px; /* match banner min-height */
     left: 0;
     right: 0;
     bottom: 0;
@@ -206,7 +215,8 @@ function renderValidUI({ taskId, duration, redirectUrl, webhook }) {
   const root = document.getElementById('appRoot');
   root.innerHTML = `
     <div class="top-banner">
-      Stay on this page for at least <span id="countdownBanner">${escapeHtml(String(duration))}</span> <span class="seconds">Seconds</span><br>to complete the task
+      <div class="first-line">Stay on this page for at least <span id="countdownBanner">${escapeHtml(String(duration))}</span> <span class="seconds">seconds</span></div>
+      <div class="second-line">to complete the task</div>
     </div>
     <iframe class="preview" src="${escapeHtml(redirectUrl)}" title="Preview"></iframe>
   `;
