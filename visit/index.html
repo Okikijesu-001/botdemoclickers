@@ -33,10 +33,10 @@
     z-index: 1000;
   }
 
-  /* The iframe now fills all space below the banner */
+  /* The iframe now fills all space below the banner; top will be adjusted at runtime */
   .preview {
     position: fixed;
-    top: 60px; /* banner height */
+    top: 60px; /* default - adjusted in JS to banner height */
     left: 0;
     right: 0;
     bottom: 0;
@@ -87,6 +87,7 @@
     text-decoration: none;
     font-weight: 800;
   }
+  .invalid-center-message a:hover { text-decoration: underline; }
   .invalid-telegram-line {
     display: flex;
     align-items: center;
@@ -117,7 +118,8 @@ const INVALID_MARKUP = `
 const INVALID_LINES = [
   "Nothing To Do Here!",
   "Join My Bot To Get",
-  "Visit Task",
+  "Visit Site Task And",
+  "Earn Real Money.",
   "@mybot"
 ];
 function startInvalidTyping() {
@@ -184,6 +186,21 @@ function renderValidUI({ taskId, duration, redirectUrl, webhook }) {
     </div>
     <iframe class="preview" src="${escapeHtml(redirectUrl)}" title="Preview"></iframe>
   `;
+
+  // ====== Only change: ensure iframe doesn't overlap banner ======
+  // compute banner's real height and apply to iframe positioning so banner text ("to") is never covered
+  const bannerEl = document.querySelector('.top-banner');
+  const iframeEl = document.querySelector('.preview');
+  if (bannerEl && iframeEl) {
+    // use getBoundingClientRect to include any device rounding
+    const bannerRect = bannerEl.getBoundingClientRect();
+    const bannerHeight = Math.ceil(bannerRect.height);
+    // set iframe top and height so it starts right below the banner
+    iframeEl.style.top = bannerHeight + 'px';
+    iframeEl.style.height = `calc(100vh - ${bannerHeight}px)`;
+  }
+  // ====== End of only change ======
+
   let secondsLeft = parseInt(duration, 10);
   const bannerCountdownEl = document.getElementById('countdownBanner');
   const interval = setInterval(() => {
