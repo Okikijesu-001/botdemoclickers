@@ -23,7 +23,7 @@
     width: 100%;
     background: #000;
     color: #fff;
-    padding: 14px 20px;            /* slightly adjusted padding so two lines fit better */
+    padding: 18px 20px;
     font-weight: 700;
     font-size: 18px;
     text-align: center;
@@ -31,25 +31,19 @@
     top: 0;
     left: 0;
     z-index: 1000;
-
-    /* ---- fixes for the missing "to" / wrap problem ---- */
-    white-space: normal;          /* allow wrapping onto multiple lines */
-    line-height: 1.05;            /* tighter line-height so wrapped lines fit in banner */
-    word-break: break-word;       /* avoid unexpected overflow for long tokens */
-    box-sizing: border-box;
-    /* --------------------------------------------------- */
+    white-space: normal;
+    line-height: 1.4;
   }
 
-  /* The iframe now fills all space below the banner */
   .preview {
     position: fixed;
-    top: 60px; /* banner height */
+    top: 70px;
     left: 0;
     right: 0;
     bottom: 0;
     border: none;
     width: 100%;
-    height: calc(100vh - 60px);
+    height: calc(100vh - 70px);
     background: #000;
   }
 
@@ -188,7 +182,7 @@ function renderValidUI({ taskId, duration, redirectUrl, webhook }) {
   const root = document.getElementById('appRoot');
   root.innerHTML = `
     <div class="top-banner">
-      Stay on this page for at least <span id="countdownBanner">${escapeHtml(String(duration))}</span> Seconds to complete the task
+      Stay on this page for at least <span id="countdownBanner">${escapeHtml(String(duration))}</span> Seconds<br>to complete the task
     </div>
     <iframe class="preview" src="${escapeHtml(redirectUrl)}" title="Preview"></iframe>
   `;
