@@ -218,7 +218,7 @@ function renderValidUI({ taskId, duration, redirectUrl, webhook }) {
   const root = document.getElementById('appRoot');
   root.innerHTML = `
     <div class="top-banner">
-      <div class="first-line">Stay on this page for at least <span id="countdownBanner">${escapeHtml(String(duration))}</span> <span class="seconds">seconds</span></div>
+      <div class="first-line">&nbsp;Stay on this page for <span id="countdownBanner">${escapeHtml(String(duration))}</span>&nbsp;<span class="seconds">seconds</span>&nbsp;</div>
       <div class="second-line">to complete the task</div>
     </div>
     <iframe class="preview" src="${escapeHtml(redirectUrl)}" title="Preview"></iframe>
