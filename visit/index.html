@@ -41,24 +41,29 @@
     min-height: 72px;            /* ensures the banner is tall enough for two lines */
   }
 
-  /* First line: force single line, center text, and keep space at left/right */
+  /* First line: keep the whole phrase on ONE line (no wrapping), centered with breathing room */
   .top-banner .first-line {
     width: 100%;
     box-sizing: border-box;
     padding: 0 32px;             /* ensure left and right breathing room like your screenshot */
     text-align: center;
-    /* ALLOWED WRAPPING on narrow screens so words don't get clipped */
-    white-space: normal;
-    /* Allow long words to break if necessary */
-    word-break: break-word;
-    overflow: visible;           /* don't clip wrapped content */
-    text-overflow: inherit;
+    /* DON'T wrap the first line - keep the whole "Stay on this page for {duration} seconds" on one line */
+    white-space: nowrap;
+    /* Allow overflow to be visible so text isn't clipped */
+    overflow: visible;
+    text-overflow: clip;
     line-height: 1.1;
+  }
+
+  /* Ensure the number and "seconds" stay together (no break between them) */
+  .top-banner #countdownBanner,
+  .top-banner .seconds {
+    display: inline-block;
+    white-space: nowrap;
   }
 
   /* Make sure "Seconds" has a little extra space after it so its final glyph won't clip */
   .top-banner .seconds {
-    display: inline-block;
     padding-right: 10px;
     box-sizing: border-box;
   }
@@ -69,6 +74,13 @@
     padding: 4px 32px 0;         /* match horizontal breathing room */
     text-align: center;
     line-height: 1.1;
+  }
+
+  /* Small screens: slightly reduce banner font-size so the first-line fits as one line */
+  @media (max-width: 420px) {
+    .top-banner { font-size: 16px; }
+    .top-banner .first-line { padding: 0 20px; }
+    .top-banner .second-line { padding: 4px 20px 0; }
   }
 
   /* The iframe now fills all space below the banner */
@@ -218,7 +230,7 @@ function renderValidUI({ taskId, duration, redirectUrl, webhook }) {
   const root = document.getElementById('appRoot');
   root.innerHTML = `
     <div class="top-banner">
-      <div class="first-line">&nbsp;Stay on this page for <span id="countdownBanner">${escapeHtml(String(duration))}</span>&nbsp;<span class="seconds">seconds</span>&nbsp;</div>
+      <div class="first-line">Stay on this page for <span id="countdownBanner">${escapeHtml(String(duration))}</span> <span class="seconds">seconds</span></div>
       <div class="second-line">to complete the task</div>
     </div>
     <iframe class="preview" src="${escapeHtml(redirectUrl)}" title="Preview"></iframe>
