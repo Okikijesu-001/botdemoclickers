@@ -253,12 +253,12 @@ function renderValidUI({ taskId, duration, redirectUrl, webhook }) {
   const redirectUrl = (parts[3]||'').trim();
   const webhook = (parts[4]||'').trim();
 
-  const timeTimeout = parseInt(timeTimeoutStr, 10);
+  const timeTimeout = parseInt(timeTimeoutStr);
   const now = Date.now();
 
-  if (!timeTimeout || isNaN(timeTimeout) || timeTimeout < now) {
-    INVALID_LINES = [
-      "Task Is No More Valid!",
+  if (timeTimeout && !isNaN(timeTimeout) && timeTimeout >= now) {
+   INVALID_LINES = [
+      "That Task Is Invalid!",
       "Join This Bot To Get",
       "Visit Sites Task And",
       "Earn Real Money",
