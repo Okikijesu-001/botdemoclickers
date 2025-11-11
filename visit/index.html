@@ -47,9 +47,12 @@
     box-sizing: border-box;
     padding: 0 32px;             /* ensure left and right breathing room like your screenshot */
     text-align: center;
-    white-space: nowrap;         /* keep the whole "Stay on this page..." on one line */
-    overflow: hidden;            /* prevent overflow from breaking layout */
-    text-overflow: clip;
+    /* ALLOWED WRAPPING on narrow screens so words don't get clipped */
+    white-space: normal;
+    /* Allow long words to break if necessary */
+    word-break: break-word;
+    overflow: visible;           /* don't clip wrapped content */
+    text-overflow: inherit;
     line-height: 1.1;
   }
 
