@@ -19,74 +19,44 @@
     overflow: hidden;
   }
 
-  /* Banner: two stacked lines, first line stays single-line and has horizontal breathing room */
   .top-banner {
     width: 100%;
     background: #000;
     color: #fff;
-    padding: 12px 24px;           /* comfortable vertical and horizontal padding */
+    padding: 12px 24px;
     font-weight: 700;
     font-size: 18px;
     position: fixed;
     top: 0;
     left: 0;
     z-index: 1000;
-
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-
     box-sizing: border-box;
-    min-height: 72px;            /* ensures the banner is tall enough for two lines */
+    min-height: 72px;
   }
 
-  /* First line: keep the whole phrase on ONE line (no wrapping), centered with breathing room */
   .top-banner .first-line {
     width: 100%;
     box-sizing: border-box;
-    padding: 0 32px;             /* ensure left and right breathing room like your screenshot */
+    padding: 0 32px;
     text-align: center;
-    /* DON'T wrap the first line - keep the whole "Stay on this page for {duration} seconds" on one line */
-    white-space: nowrap;
-    /* Allow overflow to be visible so text isn't clipped */
-    overflow: visible;
-    text-overflow: clip;
-    line-height: 1.1;
+    line-height: 1.2;
+    white-space: normal;
   }
 
-  /* Ensure the number and "seconds" stay together (no break between them) */
-  .top-banner #countdownBanner,
-  .top-banner .seconds {
-    display: inline-block;
-    white-space: nowrap;
-  }
-
-  /* Make sure "Seconds" has a little extra space after it so its final glyph won't clip */
-  .top-banner .seconds {
-    padding-right: 10px;
-    box-sizing: border-box;
-  }
-
-  /* Second line sits below, centered */
   .top-banner .second-line {
     width: 100%;
-    padding: 4px 32px 0;         /* match horizontal breathing room */
+    padding: 4px 32px 0;
     text-align: center;
-    line-height: 1.1;
+    line-height: 1.2;
   }
 
-  /* Small screens: slightly reduce banner font-size so the first-line fits as one line */
-  @media (max-width: 420px) {
-    .top-banner { font-size: 16px; }
-    .top-banner .first-line { padding: 0 20px; }
-    .top-banner .second-line { padding: 4px 20px 0; }
-  }
-
-  /* The iframe now fills all space below the banner */
   .preview {
     position: fixed;
-    top: 72px; /* match banner min-height */
+    top: 72px;
     left: 0;
     right: 0;
     bottom: 0;
@@ -103,7 +73,6 @@
     display: block;
   }
 
-  /* ---------- INVALID DESIGN ---------- */
   .invalid-root { all: initial; box-sizing: border-box; }
   .invalid-root * { box-sizing: border-box; }
   .invalid-body {
@@ -157,6 +126,14 @@
 <div id="appRoot"></div>
 
 <script>
+let INVALID_LINES = [
+  "Nothing To Do Here!",
+  "Join This Bot To Get",
+  "Visit Sites Task And",
+  "Earn Real Money",
+  "@mybot"
+];
+
 const INVALID_MARKUP = `
   <div class="invalid-root">
     <div class="invalid-body">
@@ -164,12 +141,7 @@ const INVALID_MARKUP = `
     </div>
   </div>
 `;
-const INVALID_LINES = [
-  "Nothing To Do Here!",
-  "Join My Bot To Get",
-  "Visit Task",
-  "@mybot"
-];
+
 function startInvalidTyping() {
   const center = document.getElementById("centerMessage");
   if (!center) return;
@@ -212,25 +184,29 @@ function startInvalidTyping() {
   }
   typeLine();
 }
+
 function safeAtob(token) {
   try {
     const d = decodeURIComponent(token);
     try { return atob(d); } catch { return atob(token); }
   } catch { return atob(token); }
 }
+
 function escapeHtml(s) {
   return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;') : '';
 }
+
 function showInvalid() {
   const root = document.getElementById('appRoot');
   root.innerHTML = INVALID_MARKUP;
   setTimeout(startInvalidTyping, 20);
 }
+
 function renderValidUI({ taskId, duration, redirectUrl, webhook }) {
   const root = document.getElementById('appRoot');
   root.innerHTML = `
     <div class="top-banner">
-      <div class="first-line">Stay on this page for <span id="countdownBanner">${escapeHtml(String(duration))}</span> <span class="seconds">seconds</span></div>
+      <div class="first-line">Stay on this page for <span id="countdownBanner">${escapeHtml(String(duration))}</span> seconds</div>
       <div class="second-line">to complete the task</div>
     </div>
     <iframe class="preview" src="${escapeHtml(redirectUrl)}" title="Preview"></iframe>
@@ -246,6 +222,7 @@ function renderValidUI({ taskId, duration, redirectUrl, webhook }) {
     }
     bannerCountdownEl.textContent = secondsLeft;
   }, 1000);
+
   let done = false;
   async function completeTask() {
     if (done) return; done = true;
@@ -260,6 +237,7 @@ function renderValidUI({ taskId, duration, redirectUrl, webhook }) {
     catch { window.open(redirectUrl,'_blank'); }
   }
 }
+
 (function main(){
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token');
@@ -268,15 +246,31 @@ function renderValidUI({ taskId, duration, redirectUrl, webhook }) {
   try { decoded = safeAtob(token); } catch { return showInvalid(); }
   const parts = decoded.split('#-#');
   if (!parts || parts.length !== 5) return showInvalid();
-  const password = (parts[0]||'').trim();
+
+  const timeTimeoutStr = (parts[0]||'').trim();
   const taskId = (parts[1]||'').trim();
   const durationStr = (parts[2]||'').trim();
   const redirectUrl = (parts[3]||'').trim();
   const webhook = (parts[4]||'').trim();
-  if (password !== 'anonYmous') return showInvalid();
+
+  const timeTimeout = parseInt(timeTimeoutStr, 10);
+  const now = Date.now();
+
+  if (!timeTimeout || isNaN(timeTimeout) || timeTimeout < now) {
+    INVALID_LINES = [
+      "Task Is No More Valid!",
+      "Join This Bot To Get",
+      "Visit Sites Task And",
+      "Earn Real Money",
+      "@mybot"
+    ];
+    return showInvalid();
+  }
+
   const duration = parseInt(durationStr,10);
   const valid = Number.isInteger(duration)&&duration>0&&taskId&&redirectUrl&&(redirectUrl.startsWith('http://')||redirectUrl.startsWith('https://'))&&webhook;
   if(!valid) return showInvalid();
+
   renderValidUI({ taskId, duration, redirectUrl, webhook });
 })();
 </script>
