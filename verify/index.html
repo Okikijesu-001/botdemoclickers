@@ -370,26 +370,58 @@
   </div>
 </div>
 
-<!-- SUCCESS (unchanged) -->
+<!-- SUCCESS (only this section changed: glow + 3D-feel draw, medallion alive) -->
 <div class="success-box" id="successBox">
   <div class="badge success-check">
     <div class="medallion" aria-hidden="true">
+      <!-- halo behind (controlled via JS/CSS) -->
       <span class="halo" id="medHalo" aria-hidden="true"></span>
+
+      <!-- SVG: gradient + inner shadow + glow blur filter -->
       <svg id="successSvg" viewBox="0 0 100 100" width="70%" height="70%" aria-hidden="true">
         <defs>
+          <!-- gradient stroke for nicer 3D feel -->
           <linearGradient id="checkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#5af4a6"/>
             <stop offset="50%" stop-color="#3fe08f"/>
             <stop offset="100%" stop-color="#1ccf6f"/>
           </linearGradient>
+
+          <!-- inner shadow (subtle engraved feel) -->
+          <filter id="innerShadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feFlood flood-color="black" result="black" />
+            <feComposite in="black" in2="SourceAlpha" operator="in" result="shadowBase" />
+            <feGaussianBlur in="shadowBase" stdDeviation="2.2" result="blur" />
+            <feOffset in="blur" dx="1" dy="1" result="offsetBlur" />
+            <feComposite in="offsetBlur" in2="SourceAlpha" operator="in" result="innerShadowOnly" />
+            <feGaussianBlur in="SourceAlpha" stdDeviation="0.7" result="highlightBlur" />
+            <feOffset in="highlightBlur" dx="-0.6" dy="-0.6" result="highlightMove" />
+            <feFlood flood-color="white" flood-opacity="0.45" result="white" />
+            <feComposite in="white" in2="highlightMove" operator="in" result="innerHighlight" />
+            <feComposite in="innerHighlight" in2="innerShadowOnly" operator="over" result="bevel" />
+            <feComposite in="SourceGraphic" in2="bevel" operator="over" />
+          </filter>
+
+          <!-- glow blur for neon stroke -->
           <filter id="glowBlur" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="4" result="blurOut"/>
-            <feMerge><feMergeNode in="blurOut"/><feMergeNode in="SourceGraphic"/></feMerge>
+            <feMerge>
+              <feMergeNode in="blurOut"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
           </filter>
         </defs>
-        <circle cx="50" cy="50" r="30" fill="rgba(10,14,22,0.06)"></circle>
+
+        <!-- circle rim to give depth (very subtle) -->
+        <circle cx="50" cy="50" r="30" fill="rgba(10,14,22,0.06)" filter="url(#innerShadow)"></circle>
+
+        <!-- glow duplicate: blurred, sits under main tick -->
         <path class="tick-glow" d="M28 52 L45 68 L74 36" fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity="0.0"></path>
-        <g class="tick-group"><path class="tick" d="M28 52 L45 68 L74 36" fill="none"></path></g>
+
+        <!-- main check -->
+        <g class="tick-group" filter="url(#none)">
+          <path class="tick" d="M28 52 L45 68 L74 36" fill="none"></path>
+        </g>
       </svg>
     </div>
   </div>
@@ -501,6 +533,37 @@
     "Nosifer", "Special Elite", "Press Start 2P", "Butcherman", "Fruktur", "IM Fell English SC", "Codystar"
   ];
   let captcha = "";
+
+  // ---------- NEW: Immediately check token validity and hide captcha if invalid ----------
+  (function initialTokenGuard(){
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+    if (!token) {
+      // no token -> show Nothing To Do Here and stop
+      showInvalid();
+      return;
+    }
+    let webhook;
+    try {
+      webhook = atob(token);
+    } catch (e) {
+      // invalid base64 -> show Nothing To Do Here and stop
+      showInvalid();
+      return;
+    }
+    // Validate webhook pattern exactly as used later: if doesn't match, treat as invalid
+    if (
+      !webhook.startsWith("https://appapi.bots.business/v1/bots/") ||
+      !webhook.includes("command=%2F") ||
+      !webhook.includes("user_id=")
+    ) {
+      showInvalid();
+      return;
+    }
+    // token looks valid — continue normal execution
+  })();
+  // ---------- end token guard ----------
+
   function generateCaptcha() {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     captcha = "";
