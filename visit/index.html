@@ -25,7 +25,7 @@
     color: #fff;
     padding: 12px 24px;
     font-weight: 700;
-    font-size: 18px;
+    font-size: 16px; /* slightly reduced from 18px */
     position: fixed;
     top: 0;
     left: 0;
@@ -91,7 +91,7 @@
     justify-content: center;
     align-items: center;
     text-align: center;
-    font-size: 28px;
+    font-size: 24px; /* slightly reduced from 28px */
     font-weight: 800;
     color: #000;
     padding: 25px 50px;
@@ -253,12 +253,25 @@ function renderValidUI({ taskId, duration, redirectUrl, webhook }) {
   const redirectUrl = (parts[3]||'').trim();
   const webhook = (parts[4]||'').trim();
 
-  const timeTimeout = parseInt(timeTimeoutStr);
+  // If timeTimeout is not only numbers -> Nothing To Do Here!
+  if (!/^\d+$/.test(timeTimeoutStr)) {
+    INVALID_LINES = [
+      "Nothing To Do Here!",
+      "Join This Bot To Get",
+      "Visit Sites Task And",
+      "Earn Real Money",
+      "@mybot"
+    ];
+    return showInvalid();
+  }
+
+  const timeTimeout = parseInt(timeTimeoutStr, 10);
   const now = Date.now();
 
-  if (timeTimeout && !isNaN(timeTimeout) && timeTimeout >= now) {
-   INVALID_LINES = [
-      "That Task Is Invalid!",
+  // If it's numeric but >= now -> That Task Is No Longer Valid!
+  if (!isNaN(timeTimeout) && timeTimeout >= now) {
+    INVALID_LINES = [
+      "That Task Is No Longer Valid!",
       "Join This Bot To Get",
       "Visit Sites Task And",
       "Earn Real Money",
