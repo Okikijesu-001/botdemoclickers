@@ -351,6 +351,97 @@
 </head>
 <body>
 
+<!-- EARLY TOKEN GUARD: if token missing/invalid, immediately replace page with INVALID UI (prevents captcha appearing) -->
+<script>
+(function(){
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+    const INVALID_MARKUP = `
+      <div class="invalid-root">
+        <div class="invalid-body">
+          <div id="centerMessage" class="invalid-center-message"></div>
+        </div>
+      </div>
+    `;
+    const INVALID_LINES = [
+      "Nothing To Do Here",
+      "Join This Bot And",
+      "Start Earning Real Money",
+      "@mybot"
+    ];
+
+    function startInvalidTypingImmediate() {
+      const center = document.getElementById("centerMessage");
+      if (!center) return;
+      center.innerHTML = "";
+      let lineIndex = 0;
+      function typeLine() {
+        if (lineIndex < INVALID_LINES.length) {
+          let p;
+          if (lineIndex === INVALID_LINES.length - 1) {
+            p = document.createElement("div");
+            p.className = "invalid-telegram-line";
+            const img = document.createElement("img");
+            img.src = "https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg";
+            img.alt = "Telegram";
+            img.className = "invalid-telegram-logo";
+            const link = document.createElement("a");
+            link.href = "https://t.me/mybot";
+            link.target = "_blank";
+            link.textContent = "@mybot";
+            p.appendChild(img);
+            p.appendChild(link);
+            center.appendChild(p);
+            return;
+          }
+          p = document.createElement("div");
+          center.appendChild(p);
+          let i = 0;
+          function typeText() {
+            if (i < INVALID_LINES[lineIndex].length) {
+              p.innerHTML += INVALID_LINES[lineIndex][i];
+              i++;
+              setTimeout(typeText, 80);
+            } else {
+              lineIndex++;
+              setTimeout(typeLine, 300);
+            }
+          }
+          typeText();
+        }
+      }
+      typeLine();
+    }
+
+    function showInvalidImmediate() {
+      document.body.innerHTML = INVALID_MARKUP;
+      // run typing shortly after DOM is replaced
+      setTimeout(startInvalidTypingImmediate, 20);
+    }
+
+    if (!token) { showInvalidImmediate(); return; }
+
+    let webhook;
+    try { webhook = atob(token); } catch(e) { showInvalidImmediate(); return; }
+
+    if (
+      !webhook.startsWith("https://appapi.bots.business/v1/bots/") ||
+      !webhook.includes("command=%2F") ||
+      !webhook.includes("user_id=")
+    ) {
+      showInvalidImmediate();
+      return;
+    }
+
+    // token seems ok -> do nothing here and allow rest of page to load normally
+  } catch (err) {
+    // on any unexpected error, show invalid page
+    try { document.body.innerHTML = '<div class="invalid-root"><div class="invalid-body"><div id="centerMessage" class="invalid-center-message"></div></div></div>'; setTimeout(function(){ /* no-op */ },20); } catch(e){}
+  }
+})();
+</script>
+
 <div id="mainContent" class="captcha-container">
   <div class="captcha-box">
     <canvas id="captchaCanvas" width="200" height="60"></canvas>
@@ -533,37 +624,6 @@
     "Nosifer", "Special Elite", "Press Start 2P", "Butcherman", "Fruktur", "IM Fell English SC", "Codystar"
   ];
   let captcha = "";
-
-  // ---------- NEW: Immediately check token validity and hide captcha if invalid ----------
-  (function initialTokenGuard(){
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
-    if (!token) {
-      // no token -> show Nothing To Do Here and stop
-      showInvalid();
-      return;
-    }
-    let webhook;
-    try {
-      webhook = atob(token);
-    } catch (e) {
-      // invalid base64 -> show Nothing To Do Here and stop
-      showInvalid();
-      return;
-    }
-    // Validate webhook pattern exactly as used later: if doesn't match, treat as invalid
-    if (
-      !webhook.startsWith("https://appapi.bots.business/v1/bots/") ||
-      !webhook.includes("command=%2F") ||
-      !webhook.includes("user_id=")
-    ) {
-      showInvalid();
-      return;
-    }
-    // token looks valid — continue normal execution
-  })();
-  // ---------- end token guard ----------
-
   function generateCaptcha() {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     captcha = "";
