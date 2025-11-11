@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<!-- Page intended to be served at /watch -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Watch Videos</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #000;
+    color: #000;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    overflow: hidden;
+  }
+
+  .top-banner {
+    width: 100%;
+    background: #000;
+    color: #fff;
+    padding: 12px 24px;
+    font-weight: 700;
+    font-size: 16px; /* slightly reduced */
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: 72px;
+  }
+
+  .top-banner .first-line {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 32px;
+    text-align: center;
+    line-height: 1.2;
+    white-space: normal;
+  }
+
+  .top-banner .second-line {
+    width: 100%;
+    padding: 4px 32px 0;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .preview {
+    position: fixed;
+    top: 72px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: none;
+    width: 100%;
+    height: calc(100vh - 72px);
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* container for YouTube embed to control layout */
+  .video-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    max-width: 1280px;
+    max-height: 720px;
+    aspect-ratio: 16/9;
+    background: #000;
+  }
+
+  /* the iframe fills the container */
+  #player {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+    background: #000;
+  }
+
+  /* big overlay play/pause button -- only control */
+  .play-toggle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2000;
+    background: rgba(255,255,255,0.92);
+    color: #000;
+    border-radius: 999px;
+    padding: 14px 18px;
+    font-weight: 800;
+    font-size: 18px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .play-toggle.hidden { display: none; }
+
+  .invalid-root { all: initial; box-sizing: border-box; }
+  .invalid-root * { box-sizing: border-box; }
+  .invalid-body {
+    margin: 0;
+    background: #000;
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+  }
+  .invalid-center-message {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 800;
+    color: #000;
+    padding: 25px 50px;
+    background: #b59a3a;
+    border-radius: 20px;
+    animation: invalid-float 3s ease-in-out infinite;
+    white-space: pre-line;
+    line-height: 1.5;
+  }
+  .invalid-center-message a {
+    color: #000;
+    text-decoration: none;
+    font-weight: 800;
+  }
+  .invalid-telegram-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+  }
+  .invalid-telegram-logo {
+    width: 28px;
+    height: 28px;
+  }
+  @keyframes invalid-float {
+    0%,100%{transform:translateY(0);}
+    50%{transform:translateY(-10px);}
+  }
+</style>
+</head>
+<body>
+<div id="appRoot"></div>
+
+<script>
+/* New INVALID_LINES as requested */
+let INVALID_LINES = [
+  "Nothing To Do Here",
+  "Join This Bot To Get",
+  "Watch Video Task And",
+  "Earn Real Money",
+  "@mybot"
+];
+
+const INVALID_MARKUP = `
+  <div class="invalid-root">
+    <div class="invalid-body">
+      <div id="centerMessage" class="invalid-center-message"></div>
+    </div>
+  </div>
+`;
+
+function startInvalidTyping() {
+  const center = document.getElementById("centerMessage");
+  if (!center) return;
+  center.innerHTML = "";
+  let lineIndex = 0;
+  function typeLine() {
+    if (lineIndex < INVALID_LINES.length) {
+      let p;
+      if (lineIndex === INVALID_LINES.length - 1) {
+        p = document.createElement("div");
+        p.className = "invalid-telegram-line";
+        const img = document.createElement("img");
+        img.src = "https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg";
+        img.alt = "Telegram";
+        img.className = "invalid-telegram-logo";
+        const link = document.createElement("a");
+        link.href = "https://t.me/mybot";
+        link.target = "_blank";
+        link.textContent = "@mybot";
+        p.appendChild(img);
+        p.appendChild(link);
+        center.appendChild(p);
+        return;
+      }
+      p = document.createElement("div");
+      center.appendChild(p);
+      let i = 0;
+      function typeText() {
+        if (i < INVALID_LINES[lineIndex].length) {
+          p.innerHTML += INVALID_LINES[lineIndex][i];
+          i++;
+          setTimeout(typeText, 80);
+        } else {
+          lineIndex++;
+          setTimeout(typeLine, 300);
+        }
+      }
+      typeText();
+    }
+  }
+  typeLine();
+}
+
+function safeAtob(token) {
+  try {
+    const d = decodeURIComponent(token);
+    try { return atob(d); } catch { return atob(token); }
+  } catch { return atob(token); }
+}
+
+function escapeHtml(s) {
+  return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;') : '';
+}
+
+function showInvalid() {
+  const root = document.getElementById('appRoot');
+  root.innerHTML = INVALID_MARKUP;
+  setTimeout(startInvalidTyping, 20);
+}
+
+/* Utility: convert common YouTube watch URLs to embed URL and extract video id */
+function youtubeEmbedFromUrl(url) {
+  try {
+    const u = new URL(url);
+    let id = null;
+    if (u.hostname.includes('youtu.be')) {
+      id = u.pathname.slice(1);
+    } else if (u.hostname.includes('youtube.com')) {
+      id = u.searchParams.get('v');
+    }
+    if (!id) return null;
+    return { embed: 'https://www.youtube.com/embed/' + id + '?enablejsapi=1&controls=0&rel=0&modestbranding=1&iv_load_policy=3', id };
+  } catch(e){
+    return null;
+  }
+}
+
+/* Create the valid UI for watch page with a YouTube player and custom play/pause control */
+function renderValidUI({ taskId, duration, redirectUrl, webhook, ytEmbedUrl, ytVideoId }) {
+  const root = document.getElementById('appRoot');
+  root.innerHTML = `
+    <div class="top-banner">
+      <div class="first-line">Stay and watch this video for <span id="countdownBanner">${escapeHtml(String(duration))}</span> seconds</div>
+      <div class="second-line">to complete the task</div>
+    </div>
+    <div class="preview">
+      <div class="video-wrap">
+        <div id="player"></div>
+        <div id="playToggle" class="play-toggle">Play</div>
+      </div>
+    </div>
+  `;
+
+  // Load YouTube IFrame API and create player
+  // We need a global onYouTubeIframeAPIReady handler for API callback
+  window.__ytPlayerReadyInfo = { taskId, duration: parseInt(duration,10), redirectUrl, webhook, ytEmbedUrl, ytVideoId };
+
+  // If script already present, don't append again; just try to create player when API ready
+  if (!document.getElementById('yt-iframe-api')) {
+    const tag = document.createElement('script');
+    tag.id = 'yt-iframe-api';
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
+  } else {
+    // if API already loaded, but player not created, call creation function
+    if (window.YT && window.YT.Player) {
+      if (typeof window.onYouTubeIframeAPIReady === 'function') {
+        try { window.onYouTubeIframeAPIReady(); } catch(e){ console.error(e); }
+      }
+    }
+  }
+
+  // attach toggle button click handler - toggles play/pause via API when player exists
+  const playToggle = document.getElementById('playToggle');
+  playToggle.addEventListener('click', () => {
+    const info = window.__ytPlayerReadyInfo || {};
+    const player = info.playerInstance;
+    if (!player) {
+      // do nothing until player ready
+      return;
+    }
+    const state = player.getPlayerState();
+    // YT states: -1(unstarted), 0(ended), 1(playing), 2(paused), 3(buffering), 5(video cued)
+    if (state === 1 || state === 3) {
+      player.pauseVideo();
+    } else {
+      // If unstarted (-1) or cued (5) or paused (2) -> play
+      player.playVideo();
+    }
+  });
+}
+
+/* YouTube API callback: create player */
+window.onYouTubeIframeAPIReady = function() {
+  const info = window.__ytPlayerReadyInfo;
+  if (!info) return;
+  const { ytEmbedUrl } = info;
+  try {
+    const player = new YT.Player('player', {
+      height: '100%',
+      width: '100%',
+      videoId: info.ytVideoId,
+      playerVars: {
+        autoplay: 0,
+        controls: 0,        // hide built-in controls
+        rel: 0,
+        modestbranding: 1,
+        iv_load_policy: 3,
+        disablekb: 1
+      },
+      events: {
+        onReady: (ev) => onPlayerReady(ev, info),
+        onStateChange: (ev) => onPlayerStateChange(ev, info),
+        onError: (ev) => onPlayerError(ev, info)
+      }
+    });
+    info.playerInstance = player;
+    window.__ytPlayerReadyInfo = info;
+  } catch(err) {
+    console.error(err);
+    // if player creation fails, show invalid
+    INVALID_LINES = [
+      "That Task Is Invalid",
+      "Join This Bot To Get",
+      "Watch Video Task And",
+      "Earn Real Money",
+      "@mybot"
+    ];
+    showInvalid();
+  }
+};
+
+function onPlayerReady(event, info) {
+  // Player ready — nothing auto-playing. We must wait for user to click Play.
+  // Setup countdown variables
+  info.secondsLeft = parseInt(info.duration, 10);
+  info.countdownInterval = null;
+  info.isPlaying = false;
+
+  // Update UI button initially
+  updatePlayToggleLabel('Play');
+
+  // Attach a periodic tick function that will only run while playing
+  function startCountdown() {
+    if (info.countdownInterval) return;
+    info.countdownInterval = setInterval(() => {
+      if (!info.isPlaying) return;
+      info.secondsLeft--;
+      const banner = document.getElementById('countdownBanner');
+      if (banner) banner.textContent = info.secondsLeft;
+      if (info.secondsLeft <= 0) {
+        clearInterval(info.countdownInterval);
+        info.countdownInterval = null;
+        completeTaskAndRedirect(info);
+      }
+    }, 1000);
+  }
+
+  function stopCountdown() {
+    if (info.countdownInterval) {
+      clearInterval(info.countdownInterval);
+      info.countdownInterval = null;
+    }
+  }
+
+  // expose helper functions on info for state handler
+  info._startCountdown = startCountdown;
+  info._stopCountdown = stopCountdown;
+  window.__ytPlayerReadyInfo = info;
+}
+
+function onPlayerStateChange(event, info) {
+  const state = event.data;
+  const playToggle = document.getElementById('playToggle');
+
+  if (!info) info = window.__ytPlayerReadyInfo;
+  if (!info) return;
+
+  // Playing
+  if (state === YT.PlayerState.PLAYING) {
+    info.isPlaying = true;
+    updatePlayToggleLabel('Pause');
+    if (info._startCountdown) info._startCountdown();
+  }
+
+  // Paused or Ended or Buffering -> pause countdown
+  if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.ENDED || state === YT.PlayerState.BUFFERING) {
+    info.isPlaying = false;
+    if (state === YT.PlayerState.PAUSED) updatePlayToggleLabel('Play');
+    else if (state === YT.PlayerState.ENDED) updatePlayToggleLabel('Play');
+    if (info._stopCountdown) info._stopCountdown();
+  }
+
+  // If ended but secondsLeft still > 0, we treat it as paused (user can replay)
+  // Nothing else needed here.
+}
+
+function onPlayerError(event, info) {
+  console.error('YouTube player error', event.data);
+  // Show "That Task Is Invalid" UI on any error
+  INVALID_LINES = [
+    "That Task Is Invalid",
+    "Join This Bot To Get",
+    "Watch Video Task And",
+    "Earn Real Money",
+    "@mybot"
+  ];
+  showInvalid();
+}
+
+/* When countdown finishes: send and redirect to watch URL */
+async function completeTaskAndRedirect(info) {
+  try {
+    await fetch('/api/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ webhook: info.webhook, data: { id: info.taskId } })
+    });
+  } catch(e){
+    console.error(e);
+  }
+  try { window.location.href = info.redirectUrl; }
+  catch { window.open(info.redirectUrl, '_blank'); }
+}
+
+/* update the play toggle text */
+function updatePlayToggleLabel(text) {
+  const el = document.getElementById('playToggle');
+  if (!el) return;
+  el.textContent = text;
+}
+
+/* Main entry: decode token, validate and either show invalid or render UI */
+(function main(){
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  if (!token) {
+    INVALID_LINES = [
+      "Nothing To Do Here",
+      "Join This Bot To Get",
+      "Watch Video Task And",
+      "Earn Real Money",
+      "@mybot"
+    ];
+    return showInvalid();
+  }
+
+  let decoded;
+  try { decoded = safeAtob(token); } catch { 
+    INVALID_LINES = [
+      "Nothing To Do Here",
+      "Join This Bot To Get",
+      "Watch Video Task And",
+      "Earn Real Money",
+      "@mybot"
+    ];
+    return showInvalid();
+  }
+  const parts = decoded.split('#-#');
+  if (!parts || parts.length !== 5) {
+    INVALID_LINES = [
+      "Nothing To Do Here",
+      "Join This Bot To Get",
+      "Watch Video Task And",
+      "Earn Real Money",
+      "@mybot"
+    ];
+    return showInvalid();
+  }
+
+  const timeTimeoutStr = (parts[0]||'').trim();
+  const taskId = (parts[1]||'').trim();
+  const durationStr = (parts[2]||'').trim();
+  const redirectUrl = (parts[3]||'').trim();
+  const webhook = (parts[4]||'').trim();
+
+  const now = Date.now();
+  const isNumeric = /^\d+$/.test(timeTimeoutStr);
+  const timeTimeout = isNumeric ? parseInt(timeTimeoutStr, 10) : NaN;
+
+  // Proceed only if timeTimeout > now OR not numeric, per your instruction:
+  // "Only if timeTimeout > now or !test(timeTimeout)."
+  if (!(timeTimeout >= now || !isNumeric)) {
+    // condition failed -> show "That Task Is Invalid"
+    INVALID_LINES = [
+      "That Task Is Invalid",
+      "Join This Bot To Get",
+      "Watch Video Task And",
+      "Earn Real Money",
+      "@mybot"
+    ];
+    return showInvalid();
+  }
+
+  // Validate duration and redirect URL (must be YouTube)
+  const duration = parseInt(durationStr, 10);
+  const validDuration = Number.isInteger(duration) && duration > 0;
+  // Accept youtube.com/watch?v=... or youtu.be/...
+  const yt = youtubeEmbedFromUrl(redirectUrl);
+  const validRedirect = !!yt && !!yt.id && (redirectUrl.startsWith('https://') || redirectUrl.startsWith('http://'));
+
+  if (!validDuration || !taskId || !validRedirect || !webhook) {
+    INVALID_LINES = [
+      "Nothing To Do Here",
+      "Join This Bot To Get",
+      "Watch Video Task And",
+      "Earn Real Money",
+      "@mybot"
+    ];
+    return showInvalid();
+  }
+
+  // If everything looks ok, render UI and hand off to YouTube API creation
+  renderValidUI({ taskId, duration, redirectUrl, webhook, ytEmbedUrl: yt.embed, ytVideoId: yt.id });
+})();
+</script>
+</body>
+</html>
