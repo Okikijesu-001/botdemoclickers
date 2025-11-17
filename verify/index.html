@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
 <title>Captcha Verification</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Wallpoet&family=UnifrakturCook:wght@700&family=UnifrakturMaguntia&family=Orbitron:wght@900&family=Rubik+Mono+One&family=Stalinist+One&family=Black+Ops+One&family=Monofett&family=Nosifer&family=Special+Elite&family=Press+Start+2P&family=Butcherman&family=Fruktur&family=IM+Fell+English+SC&family=Codystar:wght@300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Wallpoet&family=UnifrakturCook:wght@700&family=Orbitron:wght@900&family=Rubik+Mono+One&family=Black+Ops+One&family=Special+Elite&family=Press+Start+2P&display=swap" rel="stylesheet">
 
 <style>
+  /* --- page / captcha styles (kept your original) --- */
   body {
     margin: 0;
     height: 100vh;
@@ -23,6 +24,7 @@
     text-align: center;
     width: 100%;
     max-width: 350px;
+    z-index: 2;
   }
   .captcha-box {
     display: flex;
@@ -57,7 +59,7 @@
     display: block;
   }
   .error {
-    color: red;
+    color: #ff8a8a;
     font-size: 14px;
     min-height: 16px;
   }
@@ -75,35 +77,12 @@
     margin-right: auto;
     transition: background 0.3s;
   }
-  .btn:hover {
-    background: #1b2f5a;
-  }
-  .blurred {
-    filter: blur(6px);
-    pointer-events: none;
-  }
-  .loader {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 9999;
-    text-align: center;
-  }
-  .loader .circle {
-    width: 60px;
-    height: 60px;
-    position: relative;
-    animation: rotate 1s linear infinite;
-  }
-  .loader .circle span {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    background: limegreen;
-    border-radius: 50%;
-  }
+  .btn:hover { background: #1b2f5a; }
+  .blurred { filter: blur(6px); pointer-events: none; }
+
+  .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 9999; text-align: center; }
+  .loader .circle { width: 60px; height: 60px; position: relative; animation: rotate 1s linear infinite; }
+  .loader .circle span { position: absolute; width: 8px; height: 8px; background: limegreen; border-radius: 50%; }
   .loader .circle span:nth-child(1) { top: 0; left: 26px; }
   .loader .circle span:nth-child(2) { top: 8px; left: 45px; }
   .loader .circle span:nth-child(3) { top: 26px; left: 52px; }
@@ -112,12 +91,9 @@
   .loader .circle span:nth-child(6) { top: 45px; left: 8px; }
   .loader .circle span:nth-child(7) { top: 26px; left: 0; }
   .loader .circle span:nth-child(8) { top: 8px; left: 8px; }
-  @keyframes rotate {
-    0% { transform: rotate(0); }
-    100% { transform: rotate(360deg); }
-  }
+  @keyframes rotate { 0%{ transform: rotate(0); } 100%{ transform: rotate(360deg); } }
 
-  /* keep existing popup geometry for VPN/NoInternet/success */
+  /* success / vpn / no-internet boxes kept from your original */
   .success-box, .vpn-box, .no-internet-box {
     display: none;
     position: fixed;
@@ -132,185 +108,33 @@
     width: 300px;
     opacity: 0;
     transition: all .45s cubic-bezier(.2, .8, .2, 1);
+    z-index: 9998;
   }
   .success-box.show, .vpn-box.show, .no-internet-box.show {
     transform: translate(-50%, -50%) scale(1) perspective(700px) rotateX(0);
     opacity: 1;
   }
+  .badge { width: 86px; height: 86px; margin: 0 auto 8px; transform-style: preserve-3d; }
 
-  .badge {
-    width: 86px;
-    height: 86px;
-    margin: 0 auto 8px;
-    transform-style: preserve-3d;
-  }
-  .vpn-svg, .no-internet-svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-    transform: translateZ(30px);
-  }
+  .vpn-title, .no-internet-title { color: #ffb3b3; margin: 15px 0 5px; font-size: 20px; }
+  .success-text { margin: 15px 0 5px; font-size: 20px; color: #9fff9f; }
 
-  .draw circle, .draw path, .draw line {
-    stroke-dasharray: 100;
-    stroke-dashoffset: 100;
-    animation: stroke-in .7s ease-out forwards;
-  }
-  .success-svg path, .vpn-svg line {
-    animation-delay: .12s;
-  }
-  .no-internet-svg circle {
-    animation-delay: 0s; /* Circle draws first */
-  }
-  .no-internet-svg line.first {
-    animation-delay: .82s; /* After circle (0.7s + 0.12s) */
-  }
-  .no-internet-svg line.second {
-    animation-delay: 1.04s; /* After first line (0.82s + 0.22s) */
-  }
-  @keyframes stroke-in {
-    to { stroke-dashoffset: 0; }
-  }
-  .success-svg circle, .success-svg path { stroke: #4CAF50; }
-  .vpn-svg circle, .vpn-svg line { stroke: #ff2a2a; }
-  .no-internet-svg circle, .no-internet-svg line { stroke: #ff2a2a; }
-  .success-text, .vpn-title, .no-internet-title {
-    margin: 15px 0 5px;
-    font-size: 20px;
-    color: #9fff9f;
-  }
-  .vpn-title, .no-internet-title {
-    color: #ffb3b3;
-  }
-  .vpn-box .btn, .no-internet-box .btn {
-    background: #ff0000;
-    color: #fff;
-  }
-  .success-check, .vpn-check, .no-internet-check {
-    width: 86px;
-    height: 86px;
-    margin: 0 auto;
-    border: none;
-  }
-
-  /* ================= SUCCESS CUSTOM STYLES ONLY (glow + 3D-feel draw) ================= */
-
-  /* compact medallion to match popup size */
-  .success-box .medallion {
-    width: 86px;
-    height: 86px;
-    margin: 0 auto 8px;
-    border-radius: 50%;
-    position: relative;
-    display:grid;
-    place-items:center;
-    background:
-      radial-gradient(120% 120% at 30% 25%, #2b356a 0%, #1c2242 38%, #151a33 66%, #0a0c19 100%);
-    box-shadow: inset 0 2px 6px rgba(255,255,255,0.03), 0 8px 20px rgba(0,0,0,0.45);
-    isolation:isolate;
-    transform-style: preserve-3d;
-    /* subtle float already present via JS class toggles; animate tiny float */
-    animation: medallion-float 4.5s ease-in-out infinite;
-  }
-  @keyframes medallion-float {
-    0%,100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
-  }
-
-  /* a smaller but richer halo behind the medallion */
-  .success-box .medallion .halo {
-    position:absolute; inset:-10%;
-    border-radius:50%;
-    background: radial-gradient(circle at 50% 45%, rgba(74,222,128,0.55) 0%, rgba(74,222,128,0.18) 18%, rgba(74,222,128,0.06) 38%, rgba(74,222,128,0) 60%);
-    filter: blur(10px);
-    opacity:0;
-    transition: opacity .4s ease;
-    z-index:-2;
-  }
-  /* small rim highlight */
-  .success-box .medallion::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: radial-gradient(90% 70% at 30% 22%, rgba(255,255,255,.06) 0%, rgba(255,255,255,0) 60%);
-    mix-blend-mode: screen;
-    pointer-events:none;
-  }
-
-  /* SVG check specifics */
-  /* make sure transform origin is center for subtle 3d tilt */
-  #successSvg { transform-box: fill-box; transform-origin: 50% 50%; }
-
-  /* base path (the visible check) */
-  #successSvg .tick {
-    stroke: url(#checkGrad); /* gradient stroke */
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 8.5;
-    stroke-dasharray: 120;
-    stroke-dashoffset: 120;
-    opacity: 0.98;
-    transition: filter .2s linear;
-  }
-
-  /* duplicate blurred path underneath to create neon 3D glow (hidden until draw) */
-  #successSvg .tick-glow {
-    stroke: rgba(74,222,128,0.95);
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 12;
-    filter: url(#glowBlur);
-    stroke-dasharray: 120;
-    stroke-dashoffset: 120;
-    opacity: 0;
-  }
-
-  /* when svg has .draw, animate both paths */
-  #successSvg.draw .tick {
-    animation: check-draw 900ms cubic-bezier(.16,.9,.38,1) 150ms forwards;
-  }
-  #successSvg.draw .tick-glow {
-    animation: glow-draw 900ms cubic-bezier(.16,.9,.38,1) 140ms forwards;
-  }
-
-  /* slight 3D tilt/pop during draw for depth */
-  #successSvg.draw { animation: svg-pop 600ms cubic-bezier(.2,.9,.38,1) forwards; }
-  @keyframes svg-pop {
-    0% { transform: scale(0.98) translateZ(0) rotateX(8deg); filter: drop-shadow(0 0 0 rgba(0,0,0,0)); }
-    50% { transform: scale(1.02) translateZ(0) rotateX(0deg); }
-    100% { transform: scale(1) translateZ(0) rotateX(0deg); }
-  }
-
-  /* draw keyframes */
-  @keyframes check-draw {
-    0% { stroke-dashoffset: 120; filter: brightness(0.9) saturate(1); }
-    40% { stroke-dashoffset: 48; filter: brightness(1.15) saturate(1.15); transform: translateZ(10px) scale(1.02); }
-    100% { stroke-dashoffset: 0; filter: brightness(1.25) saturate(1.25); }
-  }
-  @keyframes glow-draw {
-    0% { stroke-dashoffset: 120; opacity: 0; filter: blur(0px) brightness(0.9); }
-    30% { opacity: 0.55; filter: blur(4px); }
-    100% { stroke-dashoffset: 0; opacity: 1; filter: blur(6px); }
-  }
-
-  /* light pulsing of halo (after draw) */
-  #successSvg.draw ~ .success-text, #successSvg.draw ~ p { /* no effect, kept for structure */ }
-  .success-box .medallion.draw .halo { opacity: 1; animation: halo-pulse 2200ms ease-in-out infinite; }
-  @keyframes halo-pulse { 0% { transform: scale(1); opacity: .22 } 50% { transform: scale(1.06); opacity: .36 } 100% { transform: scale(1); opacity: .22 } }
-
-  /* INVALID UI styles (reused from earlier pattern) */
+  /* --- INVALID / "Nothing To Do Here" UI (copied & adapted) --- */
   .invalid-root { all: initial; box-sizing: border-box; }
   .invalid-root * { box-sizing: border-box; }
   .invalid-body {
     margin: 0;
-    background: #000;
+    background: transparent;
     font-family: sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
     overflow: hidden;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    backdrop-filter: blur(2px);
   }
   .invalid-center-message {
     display: flex;
@@ -318,140 +142,41 @@
     justify-content: center;
     align-items: center;
     text-align: center;
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 800;
     color: #000;
-    padding: 25px 50px;
-    background: #b59a3a;
-    border-radius: 20px;
+    padding: 22px 36px;
+    background: linear-gradient(180deg,#b59a3a,#a07f2a);
+    border-radius: 18px;
     animation: invalid-float 3s ease-in-out infinite;
     white-space: pre-line;
-    line-height: 1.5;
+    line-height: 1.45;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
   }
-  .invalid-center-message a {
-    color: #000;
-    text-decoration: none;
-    font-weight: 800;
-  }
-  .invalid-telegram-line {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    justify-content: center;
-  }
-  .invalid-telegram-logo {
-    width: 28px;
-    height: 28px;
-  }
-  @keyframes invalid-float {
-    0%,100%{transform:translateY(0);}
-    50%{transform:translateY(-10px);}
-  }
+  .invalid-center-message a { color: #000; text-decoration: none; font-weight: 900; }
+  .invalid-telegram-line { display:flex; align-items:center; gap:8px; justify-content:center; margin-top:6px; }
+  .invalid-telegram-logo { width: 28px; height: 28px; filter: drop-shadow(0 1px 0 rgba(255,255,255,0.06)); }
+  @keyframes invalid-float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+
+  /* hide the captcha when invalid shown */
+  .hidden { display:none !important; }
 </style>
 </head>
 <body>
 
-<!-- EARLY TOKEN GUARD: if token missing/invalid, immediately replace page with INVALID UI (prevents captcha appearing) -->
-<script>
-(function(){
-  try {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
-    const INVALID_MARKUP = `
-      <div class="invalid-root">
-        <div class="invalid-body">
-          <div id="centerMessage" class="invalid-center-message"></div>
-        </div>
-      </div>
-    `;
-    const INVALID_LINES = [
-      "Nothing To Do Here",
-      "Join This Bot And",
-      "Start Earning Real Money",
-      "@mybot"
-    ];
-
-    function startInvalidTypingImmediate() {
-      const center = document.getElementById("centerMessage");
-      if (!center) return;
-      center.innerHTML = "";
-      let lineIndex = 0;
-      function typeLine() {
-        if (lineIndex < INVALID_LINES.length) {
-          let p;
-          if (lineIndex === INVALID_LINES.length - 1) {
-            p = document.createElement("div");
-            p.className = "invalid-telegram-line";
-            const img = document.createElement("img");
-            img.src = "https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg";
-            img.alt = "Telegram";
-            img.className = "invalid-telegram-logo";
-            const link = document.createElement("a");
-            link.href = "https://t.me/mybot";
-            link.target = "_blank";
-            link.textContent = "@mybot";
-            p.appendChild(img);
-            p.appendChild(link);
-            center.appendChild(p);
-            return;
-          }
-          p = document.createElement("div");
-          center.appendChild(p);
-          let i = 0;
-          function typeText() {
-            if (i < INVALID_LINES[lineIndex].length) {
-              p.innerHTML += INVALID_LINES[lineIndex][i];
-              i++;
-              setTimeout(typeText, 80);
-            } else {
-              lineIndex++;
-              setTimeout(typeLine, 300);
-            }
-          }
-          typeText();
-        }
-      }
-      typeLine();
-    }
-
-    function showInvalidImmediate() {
-      document.body.innerHTML = INVALID_MARKUP;
-      // run typing shortly after DOM is replaced
-      setTimeout(startInvalidTypingImmediate, 20);
-    }
-
-    if (!token) { showInvalidImmediate(); return; }
-
-    let webhook;
-    try { webhook = atob(token); } catch(e) { showInvalidImmediate(); return; }
-
-    if (
-      !webhook.startsWith("https://appapi.bots.business/v1/bots/") ||
-      !webhook.includes("command=%2F") ||
-      !webhook.includes("user_id=")
-    ) {
-      showInvalidImmediate();
-      return;
-    }
-
-    // token seems ok -> do nothing here and allow rest of page to load normally
-  } catch (err) {
-    // on any unexpected error, show invalid page
-    try { document.body.innerHTML = '<div class="invalid-root"><div class="invalid-body"><div id="centerMessage" class="invalid-center-message"></div></div></div>'; setTimeout(function(){ /* no-op */ },20); } catch(e){}
-  }
-})();
-</script>
-
+<!-- CAPTCHA UI -->
 <div id="mainContent" class="captcha-container">
-  <div class="captcha-box">
-    <canvas id="captchaCanvas" width="200" height="60"></canvas>
-    <div class="captcha-refresh" onclick="generateCaptcha()">⟳</div>
+  <div id="captchaUiArea">
+    <div class="captcha-box">
+      <canvas id="captchaCanvas" width="200" height="60"></canvas>
+      <div class="captcha-refresh" onclick="generateCaptcha()">⟳</div>
+    </div>
+    <div class="input-wrapper">
+      <input type="text" id="captchaInput" placeholder="Type the text exactly as shown">
+    </div>
+    <div class="error" id="error"></div>
+    <button class="btn" id="verifyBtn">Verify</button>
   </div>
-  <div class="input-wrapper">
-    <input type="text" id="captchaInput" placeholder="Type the text exactly as shown">
-  </div>
-  <div class="error" id="error"></div>
-  <button class="btn" id="verifyBtn">Verify</button>
 </div>
 
 <div class="loader" id="loader">
@@ -461,58 +186,13 @@
   </div>
 </div>
 
-<!-- SUCCESS (only this section changed: glow + 3D-feel draw, medallion alive) -->
+<!-- SUCCESS / VPN / NO INTERNET boxes (kept and slightly adapted) -->
 <div class="success-box" id="successBox">
   <div class="badge success-check">
-    <div class="medallion" aria-hidden="true">
-      <!-- halo behind (controlled via JS/CSS) -->
-      <span class="halo" id="medHalo" aria-hidden="true"></span>
-
-      <!-- SVG: gradient + inner shadow + glow blur filter -->
-      <svg id="successSvg" viewBox="0 0 100 100" width="70%" height="70%" aria-hidden="true">
-        <defs>
-          <!-- gradient stroke for nicer 3D feel -->
-          <linearGradient id="checkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#5af4a6"/>
-            <stop offset="50%" stop-color="#3fe08f"/>
-            <stop offset="100%" stop-color="#1ccf6f"/>
-          </linearGradient>
-
-          <!-- inner shadow (subtle engraved feel) -->
-          <filter id="innerShadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feFlood flood-color="black" result="black" />
-            <feComposite in="black" in2="SourceAlpha" operator="in" result="shadowBase" />
-            <feGaussianBlur in="shadowBase" stdDeviation="2.2" result="blur" />
-            <feOffset in="blur" dx="1" dy="1" result="offsetBlur" />
-            <feComposite in="offsetBlur" in2="SourceAlpha" operator="in" result="innerShadowOnly" />
-            <feGaussianBlur in="SourceAlpha" stdDeviation="0.7" result="highlightBlur" />
-            <feOffset in="highlightBlur" dx="-0.6" dy="-0.6" result="highlightMove" />
-            <feFlood flood-color="white" flood-opacity="0.45" result="white" />
-            <feComposite in="white" in2="highlightMove" operator="in" result="innerHighlight" />
-            <feComposite in="innerHighlight" in2="innerShadowOnly" operator="over" result="bevel" />
-            <feComposite in="SourceGraphic" in2="bevel" operator="over" />
-          </filter>
-
-          <!-- glow blur for neon stroke -->
-          <filter id="glowBlur" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="4" result="blurOut"/>
-            <feMerge>
-              <feMergeNode in="blurOut"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-
-        <!-- circle rim to give depth (very subtle) -->
-        <circle cx="50" cy="50" r="30" fill="rgba(10,14,22,0.06)" filter="url(#innerShadow)"></circle>
-
-        <!-- glow duplicate: blurred, sits under main tick -->
-        <path class="tick-glow" d="M28 52 L45 68 L74 36" fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity="0.0"></path>
-
-        <!-- main check -->
-        <g class="tick-group" filter="url(#none)">
-          <path class="tick" d="M28 52 L45 68 L74 36" fill="none"></path>
-        </g>
+    <div class="medallion" aria-hidden="true" style="width:86px;height:86px;border-radius:50%;background:radial-gradient(120% 120% at 30% 25%, #2b356a 0%, #1c2242 38%, #151a33 66%, #0a0c19 100%);display:grid;place-items:center;">
+      <!-- simple check mark -->
+      <svg id="successSvg" viewBox="0 0 100 100" width="46" height="46" aria-hidden="true">
+        <path class="tick" d="M28 52 L45 68 L74 36" fill="none" stroke="#5af4a6" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="120" stroke-dashoffset="0"></path>
       </svg>
     </div>
   </div>
@@ -520,13 +200,12 @@
   <p>Please return back to the bot</p>
 </div>
 
-<!-- VPN ALERT -->
 <div class="vpn-box" id="vpnBox">
   <div class="badge vpn-check">
-    <svg id="vpnSvg" class="vpn-svg" viewBox="0 0 100 100" fill="none" stroke-width="8" stroke-linecap="round">
-      <circle pathLength="100" cx="50" cy="50" r="40"></circle>
-      <line pathLength="100" x1="32" y1="32" x2="68" y2="68"></line>
-      <line pathLength="100" x1="68" y1="32" x2="32" y2="68"></line>
+    <svg id="vpnSvg" class="vpn-svg" viewBox="0 0 100 100" width="86" height="86" fill="none" stroke-width="8" stroke-linecap="round">
+      <circle cx="50" cy="50" r="40"></circle>
+      <line x1="32" y1="32" x2="68" y2="68"></line>
+      <line x1="68" y1="32" x2="32" y2="68"></line>
     </svg>
   </div>
   <h2 class="vpn-title">VPN or Proxy Detected!</h2>
@@ -534,13 +213,12 @@
   <button class="btn" id="vpnOkBtn">OK</button>
 </div>
 
-<!-- NO INTERNET ALERT -->
 <div class="no-internet-box" id="noInternetBox">
   <div class="badge no-internet-check">
-    <svg id="noInternetSvg" class="no-internet-svg" viewBox="0 0 100 100" fill="none" stroke-width="8" stroke-linecap="round">
-      <circle pathLength="100" cx="50" cy="50" r="40" transform="rotate(45, 50, 50)"></circle>
-      <line class="first" pathLength="100" x1="68" y1="68" x2="32" y2="32"></line>
-      <line class="second" pathLength="100" x1="68" y1="32" x2="32" y2="68"></line>
+    <svg id="noInternetSvg" class="no-internet-svg" viewBox="0 0 100 100" width="86" height="86" fill="none" stroke-width="8" stroke-linecap="round">
+      <circle cx="50" cy="50" r="40" transform="rotate(45,50,50)"></circle>
+      <line class="first" x1="68" y1="68" x2="32" y2="32"></line>
+      <line class="second" x1="68" y1="32" x2="32" y2="68"></line>
     </svg>
   </div>
   <h2 class="no-internet-title">No Internet Connection!</h2>
@@ -548,80 +226,16 @@
   <button class="btn" id="noInternetOkBtn">OK</button>
 </div>
 
-<!-- INVALID MARKUP (reused) -->
-<script>
-  /* The single INVALID_LINES array you asked for (only one to show) */
-  let INVALID_LINES = [
-    "Nothing To Do Here",
-    "Join This Bot And",
-    "Start Earning Real Money",
-    "@mybot"
-  ];
-
-  const INVALID_MARKUP = `
-    <div class="invalid-root">
-      <div class="invalid-body">
-        <div id="centerMessage" class="invalid-center-message"></div>
-      </div>
-    </div>
-  `;
-
-  function startInvalidTyping() {
-    const center = document.getElementById("centerMessage");
-    if (!center) return;
-    center.innerHTML = "";
-    let lineIndex = 0;
-    function typeLine() {
-      if (lineIndex < INVALID_LINES.length) {
-        let p;
-        if (lineIndex === INVALID_LINES.length - 1) {
-          p = document.createElement("div");
-          p.className = "invalid-telegram-line";
-          const img = document.createElement("img");
-          img.src = "https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg";
-          img.alt = "Telegram";
-          img.className = "invalid-telegram-logo";
-          const link = document.createElement("a");
-          link.href = "https://t.me/mybot";
-          link.target = "_blank";
-          link.textContent = "@mybot";
-          p.appendChild(img);
-          p.appendChild(link);
-          center.appendChild(p);
-          return;
-        }
-        p = document.createElement("div");
-        center.appendChild(p);
-        let i = 0;
-        function typeText() {
-          if (i < INVALID_LINES[lineIndex].length) {
-            p.innerHTML += INVALID_LINES[lineIndex][i];
-            i++;
-            setTimeout(typeText, 80);
-          } else {
-            lineIndex++;
-            setTimeout(typeLine, 300);
-          }
-        }
-        typeText();
-      }
-    }
-    typeLine();
-  }
-
-  function showInvalid() {
-    const root = document.getElementById('mainContent') || document.body;
-    // Replace whole body with INVALID MARKUP to avoid layout issues
-    document.body.innerHTML = INVALID_MARKUP;
-    setTimeout(startInvalidTyping, 20);
-  }
-</script>
+<!-- INVALID MARKUP (injected when token missing/invalid) -->
+<!-- We'll inject this programmatically, but keep template here for reference. -->
 
 <script>
+  /***********************
+   * Captcha utilities
+   ***********************/
   const fonts = [
-    "Wallpoet", "UnifrakturCook", "UnifrakturMaguntia", "Orbitron",
-    "Rubik Mono One", "Stalinist One", "Black Ops One", "Monofett",
-    "Nosifer", "Special Elite", "Press Start 2P", "Butcherman", "Fruktur", "IM Fell English SC", "Codystar"
+    "Wallpoet", "UnifrakturCook", "Orbitron",
+    "Rubik Mono One", "Black Ops One", "Special Elite", "Press Start 2P"
   ];
   let captcha = "";
   function generateCaptcha() {
@@ -629,6 +243,7 @@
     captcha = "";
     for (let i = 0; i < 5; i++) captcha += chars.charAt(Math.floor(Math.random() * chars.length));
     const canvas = document.getElementById("captchaCanvas");
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -637,7 +252,7 @@
     const font = fonts[Math.floor(Math.random() * fonts.length)];
     ctx.font = `32px '${font}', cursive`;
     ctx.fillStyle = "white";
-    ctx.setTransform(1, 0.08 * (Math.random() - 0.5), 0.08 * (Math.random() - 0.5), 1, 0, 0);
+    ctx.setTransform(1, 0.06 * (Math.random() - 0.5), 0.06 * (Math.random() - 0.5), 1, 0, 0);
     ctx.fillText(captcha, canvas.width / 2, canvas.height / 2);
   }
   generateCaptcha();
@@ -648,10 +263,184 @@
     document.getElementById("error").textContent = ok ? "" : "Incorrect";
   });
 
+  /***********************
+   * INVALID / "Nothing To Do Here" UI
+   ***********************/
+  let INVALID_LINES = [
+    "Nothing To Do Here!",
+    "Join This Bot To",
+    "Earn Real Money",
+    "@mybot"
+  ];
+
+  const INVALID_MARKUP = `
+    <div class="invalid-root" id="invalidRoot">
+      <div class="invalid-body">
+        <div id="centerMessage" class="invalid-center-message"></div>
+      </div>
+    </div>
+  `;
+
+  function safeAtob(token) {
+    try {
+      const d = decodeURIComponent(token);
+      try { return atob(d); } catch { return atob(token); }
+    } catch { try { return atob(token); } catch { return null; } }
+  }
+
+  function startInvalidTyping() {
+    const center = document.getElementById("centerMessage");
+    if (!center) return;
+    center.innerHTML = "";
+    let lineIndex = 0;
+
+    function typeLine() {
+      if (lineIndex < INVALID_LINES.length) {
+        // last line becomes telegram link row
+        if (lineIndex === INVALID_LINES.length - 1) {
+          const p = document.createElement("div");
+          p.className = "invalid-telegram-line";
+          const img = document.createElement("img");
+          img.src = "https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg";
+          img.alt = "Telegram";
+          img.className = "invalid-telegram-logo";
+          const link = document.createElement("a");
+          link.href = "https://t.me/mybot";
+          link.target = "_blank";
+          link.textContent = INVALID_LINES[lineIndex];
+          p.appendChild(img);
+          p.appendChild(link);
+          center.appendChild(p);
+          return;
+        }
+        const p = document.createElement("div");
+        center.appendChild(p);
+        let i = 0;
+        function typeText() {
+          if (i < INVALID_LINES[lineIndex].length) {
+            p.innerHTML += INVALID_LINES[lineIndex][i];
+            i++;
+            setTimeout(typeText, 100);
+          } else {
+            lineIndex++;
+            setTimeout(typeLine, 420);
+          }
+        }
+        typeText();
+      }
+    }
+    typeLine();
+  }
+
+  let invalidShown = false;
+  function showInvalid() {
+    // hide captcha UI and loader
+    document.getElementById("captchaUiArea")?.classList.add("hidden");
+    document.getElementById("loader")?.style.setProperty("display", "none");
+    // inject invalid markup
+    if (!document.getElementById('invalidRoot')) {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = INVALID_MARKUP;
+      document.body.appendChild(wrap.firstElementChild);
+    }
+    invalidShown = true;
+    setTimeout(startInvalidTyping, 40);
+  }
+
+  /***********************
+   * Token validation (same logic as original page)
+   ***********************/
+  function validateTokenFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (!token) return false;
+    const decoded = safeAtob(token);
+    if (!decoded) return false;
+    const parts = decoded.split('#-#');
+    if (!parts || parts.length !== 5) return false;
+
+    const timeTimeoutStr = (parts[0]||'').trim();
+    // taskId = parts[1], duration = parts[2], redirectUrl = parts[3], webhook = parts[4]
+    // If timeTimeout is not only numbers -> invalid
+    if (!/^\d+$/.test(timeTimeoutStr)) return false;
+    const timeTimeout = parseInt(timeTimeoutStr, 10);
+    const now = Date.now();
+    // if numeric but >= now -> invalid (same logic)
+    if (!isNaN(timeTimeout) && timeTimeout >= now) return false;
+
+    // Basic further checks (duration/redirect/webhook) - keep minimal but helpful
+    const durationStr = (parts[2]||'').trim();
+    const redirectUrl = (parts[3]||'').trim();
+    const webhook = (parts[4]||'').trim();
+    const duration = parseInt(durationStr, 10);
+    const valid = Number.isInteger(duration) && duration > 0 && redirectUrl && (redirectUrl.startsWith('http://') || redirectUrl.startsWith('https://')) && webhook;
+    return !!valid;
+  }
+
+  /***********************
+   * Show/hide popups & helpers
+   ***********************/
+  function restartStroke(svgSelector) {
+    const svg = document.querySelector(svgSelector);
+    if (!svg) return;
+    svg.classList.remove("draw");
+    void svg.getBoundingClientRect();
+    svg.classList.add("draw");
+  }
+
+  function showSuccess() {
+    document.getElementById("loader").style.display = "none";
+    const box = document.getElementById("successBox");
+    box.style.display = "block";
+    setTimeout(() => {
+      box.classList.add("show");
+      restartStroke("#successSvg");
+    }, 20);
+  }
+
+  function showVpn(msg) {
+    const box = document.getElementById("vpnBox");
+    if (msg) { box.querySelector(".vpn-title").textContent = msg; }
+    box.style.display = "block";
+    setTimeout(() => {
+      box.classList.add("show");
+      restartStroke("#vpnSvg");
+    }, 20);
+  }
+
+  function showNoInternet(msg) {
+    const box = document.getElementById("noInternetBox");
+    if (msg) box.querySelector('.no-internet-title').textContent = msg;
+    box.style.display = "block";
+    setTimeout(() => {
+      box.classList.add("show");
+      restartStroke("#noInternetSvg");
+    }, 20);
+  }
+
+  document.getElementById("vpnOkBtn").addEventListener("click", () => {
+    document.getElementById("vpnBox").classList.remove("show");
+    setTimeout(() => { document.getElementById("vpnBox").style.display = "none"; }, 250);
+  });
+  document.getElementById("noInternetOkBtn").addEventListener("click", () => {
+    document.getElementById("noInternetBox").classList.remove("show");
+    setTimeout(() => { document.getElementById("noInternetBox").style.display = "none"; }, 250);
+  });
+
+  /***********************
+   * Verify button handler
+   ***********************/
   document.getElementById("verifyBtn").addEventListener("click", async function() {
-    // If offline at the moment of clicking -> show No Internet popup
+    // If we previously determined token invalid, avoid verifying (page already shows invalid)
+    if (invalidShown) {
+      // keep UX consistent: if invalid shown, do nothing (or re-show invalid)
+      return;
+    }
+
+    // quick client-side online check
     if (!navigator.onLine) {
-      showNoInternet();
+      // show the nice popup for no internet (requested)
+      showNoInternet("No Internet Connection! Please refresh your connection and try again.");
       return;
     }
 
@@ -667,48 +456,50 @@
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("token");
 
-    // If no token -> show Nothing To Do Here invalid UI
     if (!token) {
+      // token missing — show the invalid UI instead of success
+      document.getElementById("loader").style.display = "none";
+      document.getElementById("mainContent").classList.remove("blurred");
       showInvalid();
       return;
     }
 
     let webhook;
     try {
-      webhook = atob(token);
+      webhook = safeAtob(token);
+      if (!webhook) throw new Error('bad token');
     } catch (e) {
-      // invalid token -> show Nothing To Do Here
+      document.getElementById("loader").style.display = "none";
+      document.getElementById("mainContent").classList.remove("blurred");
       showInvalid();
       return;
     }
 
-    // Validate webhook pattern (same as before); if invalid -> show Nothing To Do Here
+    // Expect webhook string contains expected pattern (keeps your original safety)
     if (
       !webhook.startsWith("https://appapi.bots.business/v1/bots/") ||
       !webhook.includes("command=%2F") ||
       !webhook.includes("user_id=")
     ) {
+      document.getElementById("loader").style.display = "none";
+      document.getElementById("mainContent").classList.remove("blurred");
       showInvalid();
       return;
     }
 
     try {
-      // Check online status again in case network dropped
-      if (!navigator.onLine) {
-        document.getElementById("loader").style.display = "none";
-        document.getElementById("mainContent").classList.remove("blurred");
-        showNoInternet();
-        return;
-      }
-
+      // ensure we can fetch external IP; network errors fall to catch
       const ipRes = await fetch("https://api.ipify.org?format=json");
+      if (!ipRes.ok) throw new Error('ip fetch failed');
       const { ip } = await ipRes.json();
-      const vpnRes = await fetch("/api/ipcheck?ip=" + encodeURIComponent(ip));
+
+      // call your IP check endpoint (server-side)
+      const vpnRes = await fetch("/api/ipcheck?ip=" + ip);
+      if (!vpnRes.ok) throw new Error('vpn check failed');
       const vpnData = await vpnRes.json();
       const vpnOn = vpnData.raw?.vpn || vpnData.raw?.tor || vpnData.raw?.active_vpn || vpnData.raw?.active_tor;
 
       if (vpnOn) {
-        // Stop loader and show VPN popup
         document.getElementById("loader").style.display = "none";
         document.getElementById("mainContent").classList.remove("blurred");
         showVpn();
@@ -716,7 +507,7 @@
       }
 
       const ipInfoRes = await fetch(`https://ipwho.is/${ip}`);
-      const ipInfo = await ipInfoRes.json();
+      const ipInfo = ipInfoRes.ok ? await ipInfoRes.json() : { ip };
 
       const dataToSend = {
         ip: ipInfo.ip,
@@ -726,98 +517,48 @@
         timezone: ipInfo.timezone?.id
       };
 
+      // send to your backend which forwards to the webhook URL
       await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ webhook, data: dataToSend })
       });
 
+      // show success
       showSuccess();
     } catch (err) {
-      // If at any point network dropped -> show No Internet popup
-      if (!navigator.onLine) {
-        document.getElementById("loader").style.display = "none";
-        document.getElementById("mainContent").classList.remove("blurred");
-        showNoInternet();
-        return;
-      }
-      // Otherwise show VPN/generic error popup (keeps existing behavior)
+      // On any fetch/network/server error show the friendly no-internet popup (as requested)
       document.getElementById("loader").style.display = "none";
       document.getElementById("mainContent").classList.remove("blurred");
-      showVpn("Something went wrong. Please try again.");
+      // show a helpful message — user asked 'pop vpn that user should refresh their Internet connection or other good idea.'
+      showNoInternet("Connection failed. Please refresh your internet and try again.");
+      console.error("Verification error:", err);
     }
   });
 
-  function restartStroke(svgSelector) {
-    const svg = document.querySelector(svgSelector);
-    if (!svg) return;
-    svg.classList.remove("draw");
-    const halo = document.getElementById('medHalo');
-    if (halo) { halo.style.opacity = '0'; halo.classList.remove('active'); }
-    void svg.getBoundingClientRect();
-    svg.classList.add("draw");
-    setTimeout(() => {
-      if (halo) { halo.style.opacity = '1'; halo.classList.add('active'); document.querySelector('.medallion')?.classList.add('draw'); }
-    }, 280);
-  }
+  /***********************
+   * Init: decide whether to show invalid UI or the captcha
+   ***********************/
+  (function initPage() {
+    // If token invalid or missing -> do not show captcha; show INVALID_LINES UI instead.
+    const ok = validateTokenFromUrl();
+    if (!ok) {
+      // hide the captcha area and show invalid UI
+      showInvalid();
+      return;
+    }
+    // else token valid: leave captcha visible and usable
+    // ensure initial draw flags to avoid SVG errors (kept from original)
+    const svg = document.getElementById("successSvg"); if (svg) svg.classList.add("draw");
+    const vpn = document.getElementById("vpnSvg"); if (vpn) vpn.classList.add("draw");
+    const noNet = document.getElementById("noInternetSvg"); if (noNet) noNet.classList.add("draw");
+  })();
 
-  function showSuccess() {
-    document.getElementById("loader").style.display = "none";
-    const box = document.getElementById("successBox");
-    box.style.display = "block";
-    setTimeout(() => {
-      box.classList.add("show");
-      restartStroke("#successSvg");
-      const glowPath = document.querySelector('#successSvg .tick-glow');
-      if (glowPath) {
-        glowPath.style.opacity = '0';
-        glowPath.style.strokeDashoffset = glowPath.getTotalLength ? glowPath.getTotalLength() : 120;
-      }
-    }, 20);
-  }
-
-  function showVpn(msg) {
-    const box = document.getElementById("vpnBox");
-    if (msg) { box.querySelector(".vpn-title").textContent = msg; }
-    box.style.display = "block";
-    setTimeout(() => {
-      box.classList.add("show");
-      restartStroke("#vpnSvg");
-    }, 20);
-  }
-
-  function showNoInternet() {
-    const box = document.getElementById("noInternetBox");
-    box.style.display = "block";
-    setTimeout(() => {
-      box.classList.add("show");
-      restartStroke("#noInternetSvg");
-    }, 20);
-  }
-
-  document.getElementById("vpnOkBtn").addEventListener("click", () => {
-    document.getElementById("vpnBox").classList.remove("show");
-    setTimeout(() => { document.getElementById("vpnBox").style.display = "none"; }, 250);
-  });
-
-  document.getElementById("noInternetOkBtn").addEventListener("click", () => {
-    document.getElementById("noInternetBox").classList.remove("show");
-    setTimeout(() => { document.getElementById("noInternetBox").style.display = "none"; }, 250);
-  });
-
+  /* safety: block context menu & some shortcuts like original */
   document.addEventListener("contextmenu", e => e.preventDefault());
   document.addEventListener("keydown", e => {
-    if ((e.ctrlKey || e.metaKey) && ["c", "u", "s", "p"].includes(e.key.toLowerCase())) e.preventDefault();
+    if ((e.ctrlKey || e.metaKey) && ["c","u","s","p"].includes(e.key.toLowerCase())) e.preventDefault();
   });
-
-  (function initDrawFlags() {
-    const svg = document.getElementById("successSvg");
-    if (svg) svg.classList.add("draw");
-    const vpn = document.getElementById("vpnSvg");
-    if (vpn) vpn.classList.add("draw");
-    const noNet = document.getElementById("noInternetSvg");
-    if (noNet) noNet.classList.add("draw");
-  })();
 </script>
 </body>
 </html>
