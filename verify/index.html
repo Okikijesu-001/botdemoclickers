@@ -337,6 +337,8 @@
     // hide captcha UI and loader
     document.getElementById("captchaUiArea")?.classList.add("hidden");
     document.getElementById("loader")?.style.setProperty("display", "none");
+    // set background to black when showing invalid (requested change)
+    document.body.style.background = '#000';
     // inject invalid markup
     if (!document.getElementById('invalidRoot')) {
       const wrap = document.createElement('div');
@@ -548,6 +550,8 @@
       return;
     }
     // else token valid: leave captcha visible and usable
+    // restore original background (requested change) so it does not stay black
+    document.body.style.background = "linear-gradient(180deg, #0d1b2a, #1b263b, #0d1b2a)";
     // ensure initial draw flags to avoid SVG errors (kept from original)
     const svg = document.getElementById("successSvg"); if (svg) svg.classList.add("draw");
     const vpn = document.getElementById("vpnSvg"); if (vpn) vpn.classList.add("draw");
