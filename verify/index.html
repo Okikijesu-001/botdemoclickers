@@ -160,7 +160,7 @@
     overflow: hidden;
     position: fixed;
     inset: 0;
-    z-index: 9999;
+    z-index: 99999; /* very high to ensure it covers everything */
     backdrop-filter: blur(2px);
   }
   .invalid-center-message {
@@ -256,8 +256,7 @@
   <button class="btn" id="noInternetOkBtn">OK</button>
 </div>
 
-<!-- INVALID MARKUP (injected when token missing/invalid) -->
-<!-- We'll inject this programmatically, but keep template here for reference. -->
+<!-- INVALID MARKUP (will be injected) -->
 
 <script>
   /***********************
@@ -357,18 +356,28 @@
 
   let invalidShown = false;
   function showInvalid() {
-    // hide captcha UI and loader
-    document.getElementById("captchaUiArea")?.setAttribute('hidden', '');
-    document.getElementById("loader")?.style.setProperty("display", "none");
-    // set background to black when showing invalid
+    // mark invalid shown
+    invalidShown = true;
+
+    // hide main content and any popups/loader so nothing shows through
+    document.getElementById("mainContent")?.classList.add("hidden");
+    document.getElementById("loader")?.classList.add("hidden");
+    document.getElementById("successBox")?.classList.add("hidden");
+    document.getElementById("vpnBox")?.classList.add("hidden");
+    document.getElementById("noInternetBox")?.classList.add("hidden");
+
+    // set background to pure black to satisfy requirement
     document.body.style.background = '#000';
-    // inject invalid markup
+
+    // inject invalid markup (only once)
     if (!document.getElementById('invalidRoot')) {
       const wrap = document.createElement('div');
-      wrap.innerHTML = INVALID_MARKUP;
+      wrap.innerHTML = INVALID_MARKUP.trim();
+      // append to body so it overlays everything
       document.body.appendChild(wrap.firstElementChild);
     }
-    invalidShown = true;
+
+    // start the typing animation slightly delayed to ensure DOM inserted
     setTimeout(startInvalidTyping, 40);
   }
 
@@ -423,11 +432,12 @@
     }, 20);
   }
 
-  document.getElementById("vpnOkBtn").addEventListener("click", () => {
+  // safe event listeners for OK buttons
+  document.getElementById("vpnOkBtn")?.addEventListener("click", () => {
     document.getElementById("vpnBox").classList.remove("show");
     setTimeout(() => { document.getElementById("vpnBox").style.display = "none"; }, 250);
   });
-  document.getElementById("noInternetOkBtn").addEventListener("click", () => {
+  document.getElementById("noInternetOkBtn")?.addEventListener("click", () => {
     document.getElementById("noInternetBox").classList.remove("show");
     setTimeout(() => { document.getElementById("noInternetBox").style.display = "none"; }, 250);
   });
@@ -446,7 +456,7 @@
   /***********************
    * Verify button handler (attached once; captchaInput validation attached only after token valid)
    ***********************/
-  document.getElementById("verifyBtn").addEventListener("click", async function() {
+  document.getElementById("verifyBtn")?.addEventListener("click", async function() {
     // If we previously determined token invalid, avoid verifying (page already shows invalid)
     if (invalidShown) return;
 
@@ -595,7 +605,7 @@
   (function initPage() {
     const ok = validateTokenFromUrl();
     if (!ok) {
-      // ensure captcha UI stays hidden and show Nothing To Do Here
+      // ensure captcha UI stays hidden and show Nothing To Do Here on black background
       showInvalid();
       return;
     }
@@ -621,7 +631,7 @@
     const refreshBtn = document.getElementById("captchaRefreshBtn");
     if (refreshBtn) refreshBtn.addEventListener("click", generateCaptcha);
 
-    // restore original background
+    // restore original background (in case it was changed earlier)
     document.body.style.background = "linear-gradient(180deg, #0d1b2a, #1b263b, #0d1b2a)";
   })();
 
