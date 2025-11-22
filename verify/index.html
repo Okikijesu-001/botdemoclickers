@@ -193,10 +193,11 @@
 
 <!-- CAPTCHA UI -->
 <div id="mainContent" class="captcha-container">
-  <div id="captchaUiArea">
+  <!-- start hidden; only un-hide when token is validated -->
+  <div id="captchaUiArea" hidden>
     <div class="captcha-box">
       <canvas id="captchaCanvas" width="200" height="60"></canvas>
-      <div class="captcha-refresh" onclick="generateCaptcha()">⟳</div>
+      <div class="captcha-refresh" id="captchaRefreshBtn">⟳</div>
     </div>
     <div class="input-wrapper">
       <input type="text" id="captchaInput" placeholder="Type the text exactly as shown">
@@ -206,7 +207,7 @@
   </div>
 </div>
 
-<!-- LOADING - replaced with 3-dot LOADING -->
+<!-- LOADING - 3-dot LOADING -->
 <div class="loader" id="loader" aria-hidden="true">
   <div class="dots" role="status" aria-live="polite">
     <div class="dot" aria-hidden="true"></div>
@@ -260,13 +261,14 @@
 
 <script>
   /***********************
-   * Captcha utilities
+   * Captcha utilities (do not run until token validated)
    ***********************/
   const fonts = [
     "Wallpoet", "UnifrakturCook", "Orbitron",
     "Rubik Mono One", "Black Ops One", "Special Elite", "Press Start 2P"
   ];
   let captcha = "";
+
   function generateCaptcha() {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     captcha = "";
@@ -284,13 +286,6 @@
     ctx.setTransform(1, 0.06 * (Math.random() - 0.5), 0.06 * (Math.random() - 0.5), 1, 0, 0);
     ctx.fillText(captcha, canvas.width / 2, canvas.height / 2);
   }
-  generateCaptcha();
-
-  document.getElementById("captchaInput").addEventListener("input", function() {
-    const val = this.value;
-    const ok = captcha.substring(0, val.length) === val;
-    document.getElementById("error").textContent = ok ? "" : "Incorrect";
-  });
 
   /***********************
    * INVALID / "Nothing To Do Here" UI
@@ -325,7 +320,6 @@
 
     function typeLine() {
       if (lineIndex < INVALID_LINES.length) {
-        // last line becomes telegram link row
         if (lineIndex === INVALID_LINES.length - 1) {
           const p = document.createElement("div");
           p.className = "invalid-telegram-line";
@@ -364,9 +358,9 @@
   let invalidShown = false;
   function showInvalid() {
     // hide captcha UI and loader
-    document.getElementById("captchaUiArea")?.classList.add("hidden");
+    document.getElementById("captchaUiArea")?.setAttribute('hidden', '');
     document.getElementById("loader")?.style.setProperty("display", "none");
-    // set background to black when showing invalid (requested change)
+    // set background to black when showing invalid
     document.body.style.background = '#000';
     // inject invalid markup
     if (!document.getElementById('invalidRoot')) {
@@ -450,13 +444,11 @@
   }
 
   /***********************
-   * Verify button handler
+   * Verify button handler (attached once; captchaInput validation attached only after token valid)
    ***********************/
   document.getElementById("verifyBtn").addEventListener("click", async function() {
     // If we previously determined token invalid, avoid verifying (page already shows invalid)
-    if (invalidShown) {
-      return;
-    }
+    if (invalidShown) return;
 
     // quick client-side online check
     if (!navigator.onLine) {
@@ -517,10 +509,8 @@
       // call your IP check endpoint (server-side)
       const vpnRes = await fetchWithTimeout("/api/ipcheck?ip=" + encodeURIComponent(ip), { timeout: 10000 });
       if (!vpnRes.ok) {
-        // If server returned 502 with extra info, try to parse JSON body; otherwise treat as failure
         let parsed = null;
         try { parsed = await vpnRes.json(); } catch (e) { parsed = null; }
-        // if parsed contains allKeysFailed, go to the "all keys failed" flow below
         if (parsed && parsed.allKeysFailed) {
           // show special "unable to verify" popup, send ip info to /api/send with status:"error"
           document.getElementById("loader").style.display = "none";
@@ -599,15 +589,39 @@
   });
 
   /***********************
-   * Init: decide whether to show invalid UI or the captcha
+   * Init: decide whether to show invalid UI or the captcha.
+   * Important: only initialize captcha if token valid.
    ***********************/
   (function initPage() {
     const ok = validateTokenFromUrl();
     if (!ok) {
+      // ensure captcha UI stays hidden and show Nothing To Do Here
       showInvalid();
       return;
     }
-    // else token valid: leave captcha visible and usable
+
+    // Token is valid -> unhide captcha UI and initialize it
+    const uiArea = document.getElementById("captchaUiArea");
+    if (uiArea) uiArea.removeAttribute('hidden');
+
+    // generate and show captcha now that token is valid
+    generateCaptcha();
+
+    // attach input listener now (only when captcha exists)
+    const input = document.getElementById("captchaInput");
+    if (input) {
+      input.addEventListener("input", function() {
+        const val = this.value;
+        const ok = captcha.substring(0, val.length) === val;
+        document.getElementById("error").textContent = ok ? "" : "Incorrect";
+      });
+    }
+
+    // attach refresh button handler
+    const refreshBtn = document.getElementById("captchaRefreshBtn");
+    if (refreshBtn) refreshBtn.addEventListener("click", generateCaptcha);
+
+    // restore original background
     document.body.style.background = "linear-gradient(180deg, #0d1b2a, #1b263b, #0d1b2a)";
   })();
 
