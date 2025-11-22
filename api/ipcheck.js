@@ -18,7 +18,8 @@ export default async function handler(req, res) {
   for (const key of API_KEYS) {
     try {
       const url = buildUrl(key, ip);
-      const response = await fetch(url, { timeout: 10000 });
+      const response = await fetch(url /* remove timeout option if your runtime doesn't support it */);
+
       if (!response.ok) {
         lastError = new Error(`HTTP ${response.status}`);
         continue;
@@ -52,7 +53,7 @@ export default async function handler(req, res) {
 
   // All keys failed — attempt to get basic ip info from ipwho.is and return that to client
   try {
-    const ipwho = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, { timeout: 8000 });
+    const ipwho = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`);
     const ipInfo = ipwho.ok ? await ipwho.json() : { ip };
     return res.status(502).json({
       success: false,

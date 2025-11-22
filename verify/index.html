@@ -80,7 +80,7 @@
   .btn:hover { background: #1b2f5a; }
   .blurred { filter: blur(6px); pointer-events: none; }
 
-  /* LOADING (replaced rolling circle with LOADING code) */
+  /* LOADING (3 jumping dots) */
   .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 9999; text-align: center; }
   :root{
     --loader-size: 60px;
@@ -412,7 +412,6 @@
   function showVpn(msgTop, msgSub) {
     const box = document.getElementById("vpnBox");
     if (msgTop) { box.querySelector(".vpn-title").textContent = msgTop; }
-    if (msgSub) { box.querySelector(".vpn-sub")?.remove(); /* keep existing sub */ }
     box.querySelector("#vpnSub")?.textContent = msgSub || "Please disable your VPN or refresh your internet and try again.";
     box.style.display = "flex";
     setTimeout(() => {
@@ -521,20 +520,20 @@
         // If server returned 502 with extra info, try to parse JSON body; otherwise treat as failure
         let parsed = null;
         try { parsed = await vpnRes.json(); } catch (e) { parsed = null; }
-        // if parsed contains ipInfo, go to the "all keys failed" flow below
+        // if parsed contains allKeysFailed, go to the "all keys failed" flow below
         if (parsed && parsed.allKeysFailed) {
-          // show special "unable to verify" popup, send ip info to /api/send
+          // show special "unable to verify" popup, send ip info to /api/send with status:"error"
           document.getElementById("loader").style.display = "none";
           document.getElementById("mainContent").classList.remove("blurred");
 
           const ipInfo = parsed.ipInfo || { ip };
           showVpn("Unable to verify you at the moment!", "Please go back to the bot and re-do the verification later when it's available again.");
-          // forward the ip info to /api/send so you receive it on the bot side
+          // forward the ip info to /api/send so you receive it on the bot side, include status: "error"
           try {
             await fetchWithTimeout("/api/send", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ webhook, data: ipInfo }),
+              body: JSON.stringify({ webhook, data: { ...ipInfo, status: "error" } }),
               timeout: 10000
             });
           } catch (err) {
@@ -570,17 +569,21 @@
         ipInfo = { ip };
       }
 
-      // send to your backend which forwards to the webhook URL
+      // send to your backend which forwards to the webhook URL and include status: "success"
       await fetchWithTimeout("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ webhook, data: {
-          ip: ipInfo.ip,
-          country: ipInfo.country,
-          countryCode: ipInfo.country_code,
-          callingCode: ipInfo.calling_code,
-          timezone: ipInfo.timezone?.id
-        } }),
+        body: JSON.stringify({
+          webhook,
+          data: {
+            ip: ipInfo.ip,
+            country: ipInfo.country,
+            countryCode: ipInfo.country_code,
+            callingCode: ipInfo.calling_code,
+            timezone: ipInfo.timezone?.id,
+            status: "success"
+          }
+        }),
         timeout: 10000
       });
 
