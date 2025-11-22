@@ -80,44 +80,71 @@
   .btn:hover { background: #1b2f5a; }
   .blurred { filter: blur(6px); pointer-events: none; }
 
+  /* LOADING (replaced rolling circle with LOADING code) */
   .loader { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 9999; text-align: center; }
-  .loader .circle { width: 60px; height: 60px; position: relative; animation: rotate 1s linear infinite; }
-  .loader .circle span { position: absolute; width: 8px; height: 8px; background: limegreen; border-radius: 50%; }
-  .loader .circle span:nth-child(1) { top: 0; left: 26px; }
-  .loader .circle span:nth-child(2) { top: 8px; left: 45px; }
-  .loader .circle span:nth-child(3) { top: 26px; left: 52px; }
-  .loader .circle span:nth-child(4) { top: 45px; left: 45px; }
-  .loader .circle span:nth-child(5) { top: 52px; left: 26px; }
-  .loader .circle span:nth-child(6) { top: 45px; left: 8px; }
-  .loader .circle span:nth-child(7) { top: 26px; left: 0; }
-  .loader .circle span:nth-child(8) { top: 8px; left: 8px; }
-  @keyframes rotate { 0%{ transform: rotate(0); } 100%{ transform: rotate(360deg); } }
+  :root{
+    --loader-size: 60px;
+    --loader-color: #d4af37; /* gold */
+    --loader-duration: 1.0s;
+  }
+  .dots{display:flex;gap:10px;align-items:center; justify-content:center;}
+  .dot{
+    width:calc(var(--loader-size)/5);
+    height:calc(var(--loader-size)/5);
+    border-radius:50%;
+    background:var(--loader-color);
+    opacity:0.95;
+    transform:translateY(0);
+    animation:jump var(--loader-duration) cubic-bezier(.2,.6,.2,1) infinite;
+  }
+  .dot:nth-child(1){animation-delay:calc(var(--loader-duration) * -0.18)}
+  .dot:nth-child(2){animation-delay:calc(var(--loader-duration) * -0.06)}
+  .dot:nth-child(3){animation-delay:calc(var(--loader-duration) * 0.06)}
+  @keyframes jump{
+    0%,100%{transform:translateY(0);opacity:0.85}
+    50%{transform:translateY(-12px);opacity:1}
+  }
 
-  /* success / vpn / no-internet boxes kept from your original */
+  /* success / vpn / no-internet boxes unified size */
   .success-box, .vpn-box, .no-internet-box {
     display: none;
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) scale(.7) perspective(700px) rotateX(18deg);
+    transform: translate(-50%, -50%) scale(.95);
     background: linear-gradient(180deg, #0d1b2a, #1b263b, #0d1b2a);
-    padding: 30px;
+    padding: 20px;
     border-radius: 10px;
     border: 1px solid #333;
     text-align: center;
-    width: 300px;
+    width: 340px;
+    height: 220px;          /* unified height */
+    box-sizing: border-box;
     opacity: 0;
-    transition: all .45s cubic-bezier(.2, .8, .2, 1);
+    transition: all .28s cubic-bezier(.2, .8, .2, 1);
     z-index: 9998;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
   }
   .success-box.show, .vpn-box.show, .no-internet-box.show {
-    transform: translate(-50%, -50%) scale(1) perspective(700px) rotateX(0);
+    transform: translate(-50%, -50%) scale(1);
     opacity: 1;
   }
-  .badge { width: 86px; height: 86px; margin: 0 auto 8px; transform-style: preserve-3d; }
+  .badge { width: 86px; height: 86px; margin: 0 auto 8px; transform-style: preserve-3d; display:flex; align-items:center; justify-content:center; }
 
-  .vpn-title, .no-internet-title { color: #ffb3b3; margin: 15px 0 5px; font-size: 20px; }
-  .success-text { margin: 15px 0 5px; font-size: 20px; color: #9fff9f; }
+  .vpn-title, .no-internet-title { color: #ffb3b3; margin: 6px 0 5px; font-size: 18px; font-weight: 800; }
+  .success-text { margin: 6px 0 5px; font-size: 18px; color: #9fff9f; font-weight:700; }
+  .popup-sub { font-size: 14px; color: #ddd; padding: 0 6px; line-height:1.4; }
+
+  /* static ❌ icon style (no animation/draw) */
+  .icon-x { width:86px; height:86px; display:inline-block; border-radius:50%; background: radial-gradient(circle at 30% 25%, #2b356a 0%, #1c2242 38%, #151a33 66%, #0a0c19 100%); display:grid; place-items:center; }
+  .icon-x svg { width:48px; height:48px; }
+
+  /* success tick kept as-is (unchanged) */
+  .medallion { width:86px;height:86px;border-radius:50%;background:radial-gradient(120% 120% at 30% 25%, #2b356a 0%, #1c2242 38%, #151a33 66%, #0a0c19 100%);display:grid;place-items:center; }
 
   /* --- INVALID / "Nothing To Do Here" UI (copied & adapted) --- */
   .invalid-root { all: initial; box-sizing: border-box; }
@@ -179,50 +206,52 @@
   </div>
 </div>
 
-<div class="loader" id="loader">
-  <div class="circle">
-    <span></span><span></span><span></span><span></span>
-    <span></span><span></span><span></span><span></span>
+<!-- LOADING - replaced with 3-dot LOADING -->
+<div class="loader" id="loader" aria-hidden="true">
+  <div class="dots" role="status" aria-live="polite">
+    <div class="dot" aria-hidden="true"></div>
+    <div class="dot" aria-hidden="true"></div>
+    <div class="dot" aria-hidden="true"></div>
   </div>
 </div>
 
-<!-- SUCCESS / VPN / NO INTERNET boxes (kept and slightly adapted) -->
-<div class="success-box" id="successBox">
-  <div class="badge success-check">
-    <div class="medallion" aria-hidden="true" style="width:86px;height:86px;border-radius:50%;background:radial-gradient(120% 120% at 30% 25%, #2b356a 0%, #1c2242 38%, #151a33 66%, #0a0c19 100%);display:grid;place-items:center;">
-      <!-- simple check mark -->
-      <svg id="successSvg" viewBox="0 0 100 100" width="46" height="46" aria-hidden="true">
-        <path class="tick" d="M28 52 L45 68 L74 36" fill="none" stroke="#5af4a6" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="120" stroke-dashoffset="0"></path>
-      </svg>
-    </div>
-  </div>
-  <h2 class="success-text">Verification successful!</h2>
-  <p>Please return back to the bot</p>
-</div>
-
-<div class="vpn-box" id="vpnBox">
-  <div class="badge vpn-check">
-    <svg id="vpnSvg" class="vpn-svg" viewBox="0 0 100 100" width="86" height="86" fill="none" stroke-width="8" stroke-linecap="round">
-      <circle cx="50" cy="50" r="40"></circle>
-      <line x1="32" y1="32" x2="68" y2="68"></line>
-      <line x1="68" y1="32" x2="32" y2="68"></line>
+<!-- SUCCESS / VPN / NO INTERNET boxes (unified sizes) -->
+<div class="success-box" id="successBox" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="medallion" aria-hidden="true">
+    <!-- simple check mark -->
+    <svg id="successSvg" viewBox="0 0 100 100" width="46" height="46" aria-hidden="true">
+      <path class="tick" d="M28 52 L45 68 L74 36" fill="none" stroke="#5af4a6" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"></path>
     </svg>
   </div>
-  <h2 class="vpn-title">VPN or Proxy Detected!</h2>
-  <p>Please disable your VPN or refresh your internet and try again.</p>
+  <h2 class="success-text">Verification successful!</h2>
+  <p class="popup-sub">Please return back to the bot</p>
+</div>
+
+<div class="vpn-box" id="vpnBox" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="icon-x" aria-hidden="true">
+    <!-- static ❌ -->
+    <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
+      <circle cx="50" cy="50" r="40" stroke="#aa6161" stroke-width="6"></circle>
+      <line x1="34" y1="34" x2="66" y2="66" stroke="#ff9b9b" stroke-width="7" stroke-linecap="round"></line>
+      <line x1="66" y1="34" x2="34" y2="66" stroke="#ff9b9b" stroke-width="7" stroke-linecap="round"></line>
+    </svg>
+  </div>
+  <h2 class="vpn-title" id="vpnTitle">VPN or Proxy Detected!</h2>
+  <p class="popup-sub" id="vpnSub">Please disable your VPN or refresh your internet and try again.</p>
   <button class="btn" id="vpnOkBtn">OK</button>
 </div>
 
-<div class="no-internet-box" id="noInternetBox">
-  <div class="badge no-internet-check">
-    <svg id="noInternetSvg" class="no-internet-svg" viewBox="0 0 100 100" width="86" height="86" fill="none" stroke-width="8" stroke-linecap="round">
-      <circle cx="50" cy="50" r="40" transform="rotate(45,50,50)"></circle>
-      <line class="first" x1="68" y1="68" x2="32" y2="32"></line>
-      <line class="second" x1="68" y1="32" x2="32" y2="68"></line>
+<div class="no-internet-box" id="noInternetBox" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="icon-x" aria-hidden="true">
+    <!-- static ❌ (same style) -->
+    <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
+      <circle cx="50" cy="50" r="40" stroke="#aa6161" stroke-width="6"></circle>
+      <line x1="34" y1="34" x2="66" y2="66" stroke="#ff9b9b" stroke-width="7" stroke-linecap="round"></line>
+      <line x1="66" y1="34" x2="34" y2="66" stroke="#ff9b9b" stroke-width="7" stroke-linecap="round"></line>
     </svg>
   </div>
-  <h2 class="no-internet-title">No Internet Connection!</h2>
-  <p>Please check your network and try again.</p>
+  <h2 class="no-internet-title" id="noNetTitle">No Internet Connection!</h2>
+  <p class="popup-sub" id="noNetSub">Please check your network and try again.</p>
   <button class="btn" id="noInternetOkBtn">OK</button>
 </div>
 
@@ -350,7 +379,7 @@
   }
 
   /***********************
-   * Token validation (same logic as original page)
+   * Token validation (simplified — token encodes webhook only)
    ***********************/
   function validateTokenFromUrl() {
     const params = new URLSearchParams(window.location.search);
@@ -358,65 +387,46 @@
     if (!token) return false;
     const decoded = safeAtob(token);
     if (!decoded) return false;
-    const parts = decoded.split('#-#');
-    if (!parts || parts.length !== 5) return false;
-
-    const timeTimeoutStr = (parts[0]||'').trim();
-    // taskId = parts[1], duration = parts[2], redirectUrl = parts[3], webhook = parts[4]
-    // If timeTimeout is not only numbers -> invalid
-    if (!/^\d+$/.test(timeTimeoutStr)) return false;
-    const timeTimeout = parseInt(timeTimeoutStr, 10);
-    const now = Date.now();
-    // if numeric but >= now -> invalid (same logic)
-    if (!isNaN(timeTimeout) && timeTimeout >= now) return false;
-
-    // Basic further checks (duration/redirect/webhook) - keep minimal but helpful
-    const durationStr = (parts[2]||'').trim();
-    const redirectUrl = (parts[3]||'').trim();
-    const webhook = (parts[4]||'').trim();
-    const duration = parseInt(durationStr, 10);
-    const valid = Number.isInteger(duration) && duration > 0 && redirectUrl && (redirectUrl.startsWith('http://') || redirectUrl.startsWith('https://')) && webhook;
-    return !!valid;
+    const webhook = decoded.trim();
+    // quick safety check: webhook must look like bots.business URL with user_id and command param
+    if (!webhook.startsWith("https://") || (!webhook.includes("bots.business") && !webhook.includes("api.bots.business") && !webhook.includes("appapi.bots.business"))) {
+      return false;
+    }
+    if (!webhook.includes("user_id=") || !webhook.includes("command=")) return false;
+    // token decodes to webhook — valid
+    return true;
   }
 
   /***********************
    * Show/hide popups & helpers
    ***********************/
-  function restartStroke(svgSelector) {
-    const svg = document.querySelector(svgSelector);
-    if (!svg) return;
-    svg.classList.remove("draw");
-    void svg.getBoundingClientRect();
-    svg.classList.add("draw");
-  }
-
   function showSuccess() {
     document.getElementById("loader").style.display = "none";
     const box = document.getElementById("successBox");
-    box.style.display = "block";
+    box.style.display = "flex";
     setTimeout(() => {
       box.classList.add("show");
-      restartStroke("#successSvg");
     }, 20);
   }
 
-  function showVpn(msg) {
+  function showVpn(msgTop, msgSub) {
     const box = document.getElementById("vpnBox");
-    if (msg) { box.querySelector(".vpn-title").textContent = msg; }
-    box.style.display = "block";
+    if (msgTop) { box.querySelector(".vpn-title").textContent = msgTop; }
+    if (msgSub) { box.querySelector(".vpn-sub")?.remove(); /* keep existing sub */ }
+    box.querySelector("#vpnSub")?.textContent = msgSub || "Please disable your VPN or refresh your internet and try again.";
+    box.style.display = "flex";
     setTimeout(() => {
       box.classList.add("show");
-      restartStroke("#vpnSvg");
     }, 20);
   }
 
-  function showNoInternet(msg) {
+  function showNoInternet(msgTop, msgSub) {
     const box = document.getElementById("noInternetBox");
-    if (msg) box.querySelector('.no-internet-title').textContent = msg;
-    box.style.display = "block";
+    if (msgTop) box.querySelector('.no-internet-title').textContent = msgTop;
+    if (msgSub) box.querySelector('.popup-sub').textContent = msgSub;
+    box.style.display = "flex";
     setTimeout(() => {
       box.classList.add("show");
-      restartStroke("#noInternetSvg");
     }, 20);
   }
 
@@ -430,19 +440,28 @@
   });
 
   /***********************
+   * fetchWithTimeout helper to detect slow/failed network
+   ***********************/
+  function fetchWithTimeout(resource, options = {}) {
+    const { timeout = 10000 } = options; // 10s default
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    return fetch(resource, { ...options, signal: controller.signal })
+      .finally(() => clearTimeout(id));
+  }
+
+  /***********************
    * Verify button handler
    ***********************/
   document.getElementById("verifyBtn").addEventListener("click", async function() {
     // If we previously determined token invalid, avoid verifying (page already shows invalid)
     if (invalidShown) {
-      // keep UX consistent: if invalid shown, do nothing (or re-show invalid)
       return;
     }
 
     // quick client-side online check
     if (!navigator.onLine) {
-      // show the nice popup for no internet (requested)
-      showNoInternet("No Internet Connection! Please refresh your connection and try again.");
+      showNoInternet("No Internet Connection!", "Please refresh your connection and try again.");
       return;
     }
 
@@ -479,8 +498,9 @@
 
     // Expect webhook string contains expected pattern (keeps your original safety)
     if (
-      !webhook.startsWith("https://appapi.bots.business/v1/bots/") ||
-      !webhook.includes("command=%2F") ||
+      !webhook.startsWith("https://") ||
+      (!webhook.includes("bots.business") && !webhook.includes("appapi.bots.business")) ||
+      !webhook.includes("command=") ||
       !webhook.includes("user_id=")
     ) {
       document.getElementById("loader").style.display = "none";
@@ -490,50 +510,87 @@
     }
 
     try {
-      // ensure we can fetch external IP; network errors fall to catch
-      const ipRes = await fetch("https://api.ipify.org?format=json");
+      // ensure we can fetch external IP; network errors/timeouts fall to catch
+      const ipRes = await fetchWithTimeout("https://api.ipify.org?format=json", { timeout: 10000 });
       if (!ipRes.ok) throw new Error('ip fetch failed');
       const { ip } = await ipRes.json();
 
       // call your IP check endpoint (server-side)
-      const vpnRes = await fetch("/api/ipcheck?ip=" + ip);
-      if (!vpnRes.ok) throw new Error('vpn check failed');
+      const vpnRes = await fetchWithTimeout("/api/ipcheck?ip=" + encodeURIComponent(ip), { timeout: 10000 });
+      if (!vpnRes.ok) {
+        // If server returned 502 with extra info, try to parse JSON body; otherwise treat as failure
+        let parsed = null;
+        try { parsed = await vpnRes.json(); } catch (e) { parsed = null; }
+        // if parsed contains ipInfo, go to the "all keys failed" flow below
+        if (parsed && parsed.allKeysFailed) {
+          // show special "unable to verify" popup, send ip info to /api/send
+          document.getElementById("loader").style.display = "none";
+          document.getElementById("mainContent").classList.remove("blurred");
+
+          const ipInfo = parsed.ipInfo || { ip };
+          showVpn("Unable to verify you at the moment!", "Please go back to the bot and re-do the verification later when it's available again.");
+          // forward the ip info to /api/send so you receive it on the bot side
+          try {
+            await fetchWithTimeout("/api/send", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ webhook, data: ipInfo }),
+              timeout: 10000
+            });
+          } catch (err) {
+            // If sending fails, show network error popup
+            showNoInternet("Something went wrong!", "Please check your network and try again.");
+            console.error("Forwarding ipInfo failed:", err);
+          }
+          return;
+        } else {
+          // generic failure (e.g., server outage) — treat as network problem
+          throw new Error('vpn check failed');
+        }
+      }
+
       const vpnData = await vpnRes.json();
-      const vpnOn = vpnData.raw?.vpn || vpnData.raw?.tor || vpnData.raw?.active_vpn || vpnData.raw?.active_tor;
+      // if the ipcheck returns explicit vpn result
+      const vpnOn = vpnData.vpn === true || vpnData.proxy === true || vpnData.tor === true || vpnData.isProxy === true;
 
       if (vpnOn) {
         document.getElementById("loader").style.display = "none";
         document.getElementById("mainContent").classList.remove("blurred");
-        showVpn();
+        showVpn(); // default vpn message
         return;
       }
 
-      const ipInfoRes = await fetch(`https://ipwho.is/${ip}`);
-      const ipInfo = ipInfoRes.ok ? await ipInfoRes.json() : { ip };
-
-      const dataToSend = {
-        ip: ipInfo.ip,
-        country: ipInfo.country,
-        countryCode: ipInfo.country_code,
-        callingCode: ipInfo.calling_code,
-        timezone: ipInfo.timezone?.id
-      };
+      // If ipcheck succeeded but didn't mark VPN, fetch ip info for sending
+      let ipInfo = { ip };
+      try {
+        const ipInfoRes = await fetchWithTimeout(`https://ipwho.is/${ip}`, { timeout: 10000 });
+        ipInfo = ipInfoRes.ok ? await ipInfoRes.json() : { ip };
+      } catch (e) {
+        // If ipwho.is is slow/unavailable, still continue with minimal info
+        ipInfo = { ip };
+      }
 
       // send to your backend which forwards to the webhook URL
-      await fetch("/api/send", {
+      await fetchWithTimeout("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ webhook, data: dataToSend })
+        body: JSON.stringify({ webhook, data: {
+          ip: ipInfo.ip,
+          country: ipInfo.country,
+          countryCode: ipInfo.country_code,
+          callingCode: ipInfo.calling_code,
+          timezone: ipInfo.timezone?.id
+        } }),
+        timeout: 10000
       });
 
       // show success
       showSuccess();
     } catch (err) {
-      // On any fetch/network/server error show the friendly no-internet popup (as requested)
+      // On any fetch/network/server error show the friendly no-internet popup
       document.getElementById("loader").style.display = "none";
       document.getElementById("mainContent").classList.remove("blurred");
-      // show a helpful message — user asked 'pop vpn that user should refresh their Internet connection or other good idea.'
-      showNoInternet("Connection failed. Please refresh your internet and try again.");
+      showNoInternet("Something went wrong!", "Please check your network and try again.");
       console.error("Verification error:", err);
     }
   });
@@ -542,20 +599,13 @@
    * Init: decide whether to show invalid UI or the captcha
    ***********************/
   (function initPage() {
-    // If token invalid or missing -> do not show captcha; show INVALID_LINES UI instead.
     const ok = validateTokenFromUrl();
     if (!ok) {
-      // hide the captcha area and show invalid UI
       showInvalid();
       return;
     }
     // else token valid: leave captcha visible and usable
-    // restore original background (requested change) so it does not stay black
     document.body.style.background = "linear-gradient(180deg, #0d1b2a, #1b263b, #0d1b2a)";
-    // ensure initial draw flags to avoid SVG errors (kept from original)
-    const svg = document.getElementById("successSvg"); if (svg) svg.classList.add("draw");
-    const vpn = document.getElementById("vpnSvg"); if (vpn) vpn.classList.add("draw");
-    const noNet = document.getElementById("noInternetSvg"); if (noNet) noNet.classList.add("draw");
   })();
 
   /* safety: block context menu & some shortcuts like original */

@@ -1,3 +1,4 @@
+// /api/send.js
 export default async function handler(req, res) {
   const { webhook, data } = req.body;
 
@@ -12,8 +13,9 @@ export default async function handler(req, res) {
       body: JSON.stringify(data)
     });
 
-    const result = await response.text();
-    res.status(response.status).send(result);
+    const text = await response.text();
+    // Forward the webhook response (status + text) back to caller
+    res.status(response.status).send(text);
   } catch (err) {
     res.status(500).json({ error: "Relay error: " + err.message });
   }
