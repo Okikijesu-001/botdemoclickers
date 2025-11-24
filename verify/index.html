@@ -93,7 +93,7 @@
   }
   :root{
     --loader-size: 48px;
-    --loader-color: #d4af37; /* gold */
+    --loader-color: #0d1b2a; /* changed to website background color (first gradient color) */
     --loader-duration: 1.2s;
   }
   .dots{display:flex;gap:8px;align-items:center}
@@ -193,18 +193,26 @@
   }
   .modal{
     width: min(92%, 420px);
-    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    /* Changed to opaque background similar to success box */
+    background: linear-gradient(180deg, #0d1b2a, #1b263b, #0d1b2a);
     border-radius:20px;
     padding:34px 28px 28px 28px;
     box-shadow: 0 10px 30px rgba(2,8,15,0.6);
     text-align:center;
     transform-style:preserve-3d;
     transform-origin:center;
-    border: 1px solid rgba(255,255,255,0.03);
-    animation: popIn 420ms cubic-bezier(.2,.9,.2,1) forwards;
+    border: 1px solid #333;
+    /* changed animation approach: use push-out show similar to success box */
+    transform: translateY(18px) scale(.86) perspective(700px) rotateX(18deg);
+    opacity: 0;
+    transition: all .45s cubic-bezier(.2, .8, .2, 1);
     position:relative;
     color: #fff;
     backdrop-filter: none;
+  }
+  .modal.show {
+    transform: translateY(0) scale(1) perspective(700px) rotateX(0);
+    opacity: 1;
   }
   @keyframes popIn{
     0%{ opacity:0; transform: perspective(900px) translateY(28px) rotateX(12deg) scale(.96); }
@@ -448,12 +456,19 @@
 
     // keep the page's background gradient but blur content behind the modal
     content.classList.add('blurred');
+
+    // show overlay and add modal "show" class so it pushes out (same visual behavior as success-box)
     overlay.style.display = 'flex';
     overlay.setAttribute('aria-hidden', 'false');
+    modal.classList.add('show');      // <-- ADDED: apply push-out effect
     okBtn.focus();
     document.addEventListener('keydown', handleKey);
   }
   function closeAlert() {
+    // hide modal push-out class first (so it can animate)
+    modal.classList.remove('show');   // <-- ADDED: remove show class
+    // allow the transition to run a bit before fully hiding overlay - but keep behavior consistent:
+    // remove overlay/display immediately to match previous behavior while still removing 'show' class
     overlay.style.display = 'none';
     overlay.setAttribute('aria-hidden', 'true');
     content.classList.remove('blurred');
