@@ -5,6 +5,7 @@ export default async function handler(req, res) {
 
   // Add your API keys here:
   const API_KEYS = [
+    "HADOtDzKrRMeepfsnKRdHmXej6wQ9AHYwbEcOgWgwpLhhtC0fM",
     "YOUR_API_KEY_1",
     "YOUR_API_KEY_2",
     "YOUR_API_KEY_3"
