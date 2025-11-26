@@ -3,12 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-<title>Captcha Verification</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Wallpoet&family=UnifrakturCook:wght@700&family=Orbitron:wght@900&family=Rubik+Mono+One&family=Black+Ops+One&family=Special+Elite&family=Press+Start+2P&display=swap" rel="stylesheet">
+<title>Alert Box</title>
 
 <style>
-  /* --- page / captcha styles (kept your original) --- */
   body {
     margin: 0;
     height: 100vh;
@@ -16,702 +13,85 @@
     justify-content: center;
     align-items: center;
     font-family: Arial, sans-serif;
-    user-select: none;
-    background: linear-gradient(180deg, #0d1b2a, #1b263b, #0d1b2a);
+    background: #000;
     color: #fff;
     overflow: hidden;
   }
-  .captcha-container {
-    text-align: center;
-    width: 100%;
-    max-width: 350px;
-    z-index: 2;
-  }
-  .captcha-box {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: transparent;
-    border-radius: 10px;
-    padding: 10px 15px;
-    margin-bottom: 20px;
-    height: 60px;
-    box-shadow: none;
-  }
-  .captcha-refresh {
-    cursor: pointer;
-    margin-left: 10px;
-    color: #fff;
-    font-weight: bold;
-    font-size: 1.5em;
-    user-select: none;
-  }
-  .input-wrapper {
-    margin-bottom: 10px;
-  }
-  .input-wrapper input {
-    width: 80%;
-    max-width: 250px;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    text-align: center;
-    margin: 0 auto;
-    display: block;
-  }
-  .error {
-    color: #ff8a8a;
-    font-size: 14px;
-    min-height: 16px;
-  }
-  .btn {
-    margin-top: 10px;
-    background: #243b77;
-    color: #fff;
-    border: none;
-    padding: 12px 40px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 16px;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    transition: background 0.3s;
-    box-shadow: none; /* ensure no shadow by default */
-    -webkit-tap-highlight-color: transparent; /* remove tap highlight on mobile */
-    -webkit-appearance: none;
-    appearance: none;
-    -webkit-box-shadow: none;
-  }
-  .btn:hover { background: #1b2f5a; }
 
-  /* Remove any focus/active outline or shadow for the verify button */
-  .btn:focus,
-  .btn:active,
-  .btn:focus-visible {
-    outline: none;
-    box-shadow: none;
+  /* Background Blur */
+  #blur-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: none !important; /* REMOVE DELAY (instant disappear) */
   }
-  /* Ensure absolutely no shadow/glow/transform/filter when clicked */
-  .btn:active {
+
+  /* Alert Box */
+  #alert-box {
+    background: #111;
+    padding: 25px;
+    width: 80%;
+    max-width: 300px;
+    border-radius: 10px;
+    text-align: center;
+    animation: pop 0.2s ease-out;
+  }
+
+  @keyframes pop {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  /* OK Button */
+  #ok-btn {
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 7px;
+    background: #0a84ff;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+
+    /* REMOVE ANY SHADOW, OUTLINE, HIGHLIGHT */
+    outline: none !important;
     box-shadow: none !important;
-    -webkit-box-shadow: none !important;
-    transform: none !important;
+  }
+
+  #ok-btn:active,
+  #ok-btn:focus,
+  #ok-btn:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
     filter: none !important;
   }
-
-  .blurred { filter: blur(6px); pointer-events: none; }
-
-  /* --- REPLACED loader: use your LOADING code (dots) --- */
-  .loader {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%,-50%);
-    z-index: 9998;
-    text-align: center;
-  }
-  :root{
-    --loader-size: 48px;
-    /* CHANGED: loader dots color to gold */
-    --loader-color: #d4af37;
-    --loader-duration: 1.2s;
-  }
-  .dots{display:flex;gap:8px;align-items:center}
-  .dot{
-    width:calc(var(--loader-size)/5);
-    height:calc(var(--loader-size)/5);
-    border-radius:50%;
-    /* ensure dots use the site background color (now gold) */
-    background:var(--loader-color);
-    opacity:0.85;
-    transform:translateY(0);
-    animation:jump var(--loader-duration) cubic-bezier(.2,.6,.2,1) infinite;
-  }
-  .dot:nth-child(1){animation-delay:calc(var(--loader-duration) * -0.18)}
-  .dot:nth-child(2){animation-delay:calc(var(--loader-duration) * -0.06)}
-  .dot:nth-child(3){animation-delay:calc(var(--loader-duration) * 0.06)}
-  @keyframes jump{
-    0%,100%{transform:translateY(0);opacity:0.85}
-    50%{transform:translateY(-12px);opacity:1}
-  }
-
-  /* success box kept as-is (not touched) */
-  .success-box {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(.7) perspective(700px) rotateX(18deg);
-    background: linear-gradient(180deg, #0d1b2a, #1b263b, #0d1b2a);
-    padding: 30px;
-    border-radius: 10px;
-    border: 1px solid #333;
-    text-align: center;
-    width: 300px;
-    opacity: 0;
-    transition: all .45s cubic-bezier(.2, .8, .2, 1);
-    z-index: 9999;
-  }
-  .success-box.show {
-    transform: translate(-50%, -50%) scale(1) perspective(700px) rotateX(0);
-    opacity: 1;
-  }
-  .badge { width: 86px; height: 86px; margin: 0 auto 8px; transform-style: preserve-3d; }
-  .success-text { margin: 15px 0 5px; font-size: 20px; color: #9fff9f; }
-
-  /* --- INVALID / "Nothing To Do Here" UI (kept) --- */
-  .invalid-root { all: initial; box-sizing: border-box; }
-  .invalid-root * { box-sizing: border-box; }
-  .invalid-body {
-    margin: 0;
-    background: transparent;
-    font-family: sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    overflow: hidden;
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    backdrop-filter: blur(2px);
-  }
-  .invalid-center-message {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    font-size: 22px;
-    font-weight: 800;
-    color: #000;
-    padding: 22px 36px;
-    background: linear-gradient(180deg,#b59a3a,#a07f2a);
-    border-radius: 18px;
-    animation: invalid-float 3s ease-in-out infinite;
-    white-space: pre-line;
-    line-height: 1.45;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-  }
-  .invalid-center-message a { color: #000; text-decoration: none; font-weight: 900; }
-  .invalid-telegram-line { display:flex; align-items:center; gap:8px; justify-content:center; margin-top:6px; }
-  .invalid-telegram-logo { width: 28px; height: 28px; filter: drop-shadow(0 1px 0 rgba(255,255,255,0.06)); }
-  @keyframes invalid-float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
-
-  .hidden { display:none !important; }
-
-  /* --- ALERT modal (your ALERT code integrated & adapted to verify background) --- */
-  .overlay{
-    position:fixed;
-    inset:0;
-    display:none; /* hidden by default */
-    align-items:center;
-    justify-content:center;
-    background: rgba(6,12,18,0.45);
-    z-index:10000;
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
-  }
-  .modal{
-    width: min(92%, 420px);
-    /* Changed to opaque background similar to success box */
-    background: linear-gradient(180deg, #0d1b2a, #1b263b, #0d1b2a);
-    border-radius:20px;
-    padding:34px 28px 28px 28px;
-    box-shadow: 0 10px 30px rgba(2,8,15,0.6);
-    text-align:center;
-    transform-style:preserve-3d;
-    transform-origin:center;
-    border: 1px solid #333;
-    /* changed animation approach: use push-out show similar to success box */
-    transform: translateY(18px) scale(.86) perspective(700px) rotateX(18deg);
-    opacity: 0;
-    transition: all .45s cubic-bezier(.2, .8, .2, 1);
-    position:relative;
-    color: #fff;
-    backdrop-filter: none;
-  }
-  .modal.show {
-    transform: translateY(0) scale(1) perspective(700px) rotateX(0);
-    opacity: 1;
-  }
-  @keyframes popIn{
-    0%{ opacity:0; transform: perspective(900px) translateY(28px) rotateX(12deg) scale(.96); }
-    60%{ opacity:1; transform: perspective(900px) translateY(-6px) rotateX(-4deg) scale(1.02); }
-    100%{ opacity:1; transform: perspective(900px) translateY(0) rotateX(0) scale(1); }
-  }
-  .icon-wrap{
-    width:130px;
-    height:130px;
-    margin: 0 auto 18px auto;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    perspective:800px;
-  }
-  .icon-svg{
-    width:120px;
-    height:120px;
-    display:block;
-  }
-  h2.alert-title{
-    margin:8px 0 12px;
-    font-size:20px;
-    color:#f0b6b6;
-  }
-  p.alert-body { margin:0 0 22px; color:#cbd5df; font-size:15px; }
-  .btn-ok{
-    display:inline-block;
-    min-width:120px;
-    padding:12px 22px;
-    border-radius:10px;
-    background: linear-gradient(180deg,#ff2b2b,#e21f1f);
-    color:white;
-    border:none;
-    font-weight:600;
-    letter-spacing:.6px;
-    cursor:pointer;
-    box-shadow: 0 6px 18px rgba(239,45,45,0.22);
-    transition: transform 160ms ease, box-shadow 160ms ease;
-    transform: translateZ(0);
-  }
-  .btn-ok:active{ transform: translateY(1px) scale(.995); }
-  .btn-ok:hover{ box-shadow: 0 10px 30px rgba(239,45,45,0.28); }
-
-  @media (max-width:420px){
-    .icon-wrap{ width:110px; height:110px; }
-    .icon-svg{ width:100px; height:100px; }
-    h2.alert-title{ font-size:18px }
-  }
 </style>
+
 </head>
 <body>
 
-<!-- Page content (captcha) -->
-<div id="mainContent" class="captcha-container">
-  <div id="captchaUiArea">
-    <div class="captcha-box">
-      <canvas id="captchaCanvas" width="200" height="60"></canvas>
-      <div class="captcha-refresh" onclick="generateCaptcha()">⟳</div>
-    </div>
-    <div class="input-wrapper">
-      <input type="text" id="captchaInput" placeholder="Type the text exactly as shown">
-    </div>
-    <div class="error" id="error"></div>
-    <button class="btn" id="verifyBtn">Verify</button>
-  </div>
-</div>
-
-<!-- LOADER: replaced with your dots loader -->
-<div class="loader" id="loader" aria-hidden="true">
-  <div class="dots" role="status" aria-label="Loading">
-    <div class="dot"></div>
-    <div class="dot"></div>
-    <div class="dot"></div>
-  </div>
-</div>
-
-<!-- SUCCESS -->
-<div class="success-box" id="successBox" aria-live="polite">
-  <div class="badge success-check">
-    <div class="medallion" aria-hidden="true" style="width:86px;height:86px;border-radius:50%;background:radial-gradient(120% 120% at 30% 25%, #2b356a 0%, #1c2242 38%, #151a33 66%, #0a0c19 100%);display:grid;place-items:center;">
-      <svg id="successSvg" viewBox="0 0 100 100" width="46" height="46" aria-hidden="true">
-        <path class="tick" d="M28 52 L45 68 L74 36" fill="none" stroke="#5af4a6" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="120" stroke-dashoffset="0"></path>
-      </svg>
-    </div>
-  </div>
-  <h2 class="success-text">Verification successful!</h2>
-  <p>Please return back to the bot</p>
-</div>
-
-<!-- INVALID template (injected via JS if token missing/invalid) -->
-<!-- ALERT modal (replaces vpn/no-internet boxes) -->
-<div id="alertOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="alertTitle" aria-hidden="true">
-  <div class="modal" id="modalPanel">
-    <div class="icon-wrap" aria-hidden="true">
-      <svg class="icon-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="50" cy="50" r="34" fill="none" stroke="#ff2b2b" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
-        <g stroke="#ff2b2b" stroke-width="8" stroke-linecap="round">
-          <line x1="38" y1="38" x2="62" y2="62" />
-          <line x1="62" y1="38" x2="38" y2="62" />
-        </g>
-      </svg>
-    </div>
-
-    <h2 id="alertTitle" class="alert-title">Something went wrong!</h2>
-    <p id="alertBody" class="alert-body">Please check your Internet connection and try again.</p>
-
-    <button class="btn-ok" id="okBtn">OK</button>
+<div id="blur-bg">
+  <div id="alert-box">
+    <p>This is your alert message.</p>
+    <button id="ok-btn">OK</button>
   </div>
 </div>
 
 <script>
-  /***********************
-   * Captcha utilities
-   ***********************/
-  const fonts = [
-    "Wallpoet", "UnifrakturCook", "Orbitron",
-    "Rubik Mono One", "Black Ops One", "Special Elite", "Press Start 2P"
-  ];
-  let captcha = "";
-  function generateCaptcha() {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    captcha = "";
-    for (let i = 0; i < 5; i++) captcha += chars.charAt(Math.floor(Math.random() * chars.length));
-    const canvas = document.getElementById("captchaCanvas");
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    const font = fonts[Math.floor(Math.random() * fonts.length)];
-    ctx.font = `32px '${font}', cursive`;
-    ctx.fillStyle = "white";
-    ctx.setTransform(1, 0.06 * (Math.random() - 0.5), 0.06 * (Math.random() - 0.5), 1, 0, 0);
-    ctx.fillText(captcha, canvas.width / 2, canvas.height / 2);
-  }
-  generateCaptcha();
-
-  document.getElementById("captchaInput").addEventListener("input", function() {
-    const val = this.value;
-    const ok = captcha.substring(0, val.length) === val;
-    document.getElementById("error").textContent = ok ? "" : "Incorrect";
-  });
-
-  /***********************
-   * INVALID / "Nothing To Do Here" UI
-   ***********************/
-  let INVALID_LINES = [
-    "Nothing To Do Here!",
-    "Join This Bot To",
-    "Earn Real Money",
-    "@mybot"
-  ];
-
-  const INVALID_MARKUP = `
-    <div class="invalid-root" id="invalidRoot">
-      <div class="invalid-body">
-        <div id="centerMessage" class="invalid-center-message"></div>
-      </div>
-    </div>
-  `;
-
-  function safeAtob(token) {
-    try {
-      const d = decodeURIComponent(token);
-      try { return atob(d); } catch { return atob(token); }
-    } catch { try { return atob(token); } catch { return null; } }
-  }
-
-  function startInvalidTyping() {
-    const center = document.getElementById("centerMessage");
-    if (!center) return;
-    center.innerHTML = "";
-    let lineIndex = 0;
-
-    function typeLine() {
-      if (lineIndex < INVALID_LINES.length) {
-        if (lineIndex === INVALID_LINES.length - 1) {
-          const p = document.createElement("div");
-          p.className = "invalid-telegram-line";
-          const img = document.createElement("img");
-          img.src = "https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg";
-          img.alt = "Telegram";
-          img.className = "invalid-telegram-logo";
-          const link = document.createElement("a");
-          link.href = "https://t.me/mybot";
-          link.target = "_blank";
-          link.textContent = INVALID_LINES[lineIndex];
-          p.appendChild(img);
-          p.appendChild(link);
-          center.appendChild(p);
-          return;
-        }
-        const p = document.createElement("div");
-        center.appendChild(p);
-        let i = 0;
-        function typeText() {
-          if (i < INVALID_LINES[lineIndex].length) {
-            p.innerHTML += INVALID_LINES[lineIndex][i];
-            i++;
-            setTimeout(typeText, 100);
-          } else {
-            lineIndex++;
-            setTimeout(typeLine, 420);
-          }
-        }
-        typeText();
-      }
-    }
-    typeLine();
-  }
-
-  let invalidShown = false;
-  function showInvalid() {
-    document.getElementById("captchaUiArea")?.classList.add("hidden");
-    document.getElementById("loader")?.style.setProperty("display", "none");
-    document.body.style.background = '#000';
-    if (!document.getElementById('invalidRoot')) {
-      const wrap = document.createElement('div');
-      wrap.innerHTML = INVALID_MARKUP;
-      document.body.appendChild(wrap.firstElementChild);
-    }
-    invalidShown = true;
-    setTimeout(startInvalidTyping, 40);
-  }
-
-  /***********************
-   * ALERT modal functions (integrated from your ALERT code)
-   ***********************/
-  const overlay = document.getElementById('alertOverlay');
-  const content = document.getElementById('mainContent');
-  const okBtn = document.getElementById('okBtn');
-  const modal = document.getElementById('modalPanel');
-
-  let lastFocused;
-  function showAlert({ title = "Something went wrong!", body = "Please check your Internet connection and try again." } = {}) {
-    lastFocused = document.activeElement;
-    document.getElementById('alertTitle').textContent = title;
-    document.getElementById('alertBody').textContent = body;
-
-    // keep the page's background gradient but blur content behind the modal
-    content.classList.add('blurred');
-
-    // show overlay and add modal "show" class so it pushes out (same visual behavior as success-box)
-    overlay.style.display = 'flex';
-    overlay.setAttribute('aria-hidden', 'false');
-    modal.classList.add('show');
-    okBtn.focus();
-    document.addEventListener('keydown', handleKey);
-  }
-  function closeAlert() {
-    // hide modal push-out class first (so it can animate)
-    modal.classList.remove('show');
-
-    // allow transition to finish before hiding overlay and removing blur so the push-out is visible
-    setTimeout(() => {
-      overlay.style.display = 'none';
-      overlay.setAttribute('aria-hidden', 'true');
-      content.classList.remove('blurred');
-    }, 450); // matches CSS transition duration (.45s)
-
-    document.removeEventListener('keydown', handleKey);
-    if (lastFocused) lastFocused.focus();
-  }
-  function handleKey(e) {
-    if (e.key === 'Escape') closeAlert();
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      okBtn.focus();
-    }
-  }
-  okBtn.addEventListener('click', closeAlert);
-
-  /***********************
-   * Helper: fetch with timeout + online checking
-   * returns response (like fetch) or throws on timeout/offline/error
-   ***********************/
-  const DEFAULT_TIMEOUT = 8000; // milliseconds
-  async function fetchWithTimeout(url, opts = {}, timeoutMs = DEFAULT_TIMEOUT) {
-    if (!navigator.onLine) throw new Error('offline');
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const res = await fetch(url, { ...opts, signal: controller.signal });
-      clearTimeout(id);
-      if (!res.ok) {
-        const text = await res.text().catch(()=>null);
-        const err = new Error('HTTP error ' + res.status + (text ? (': '+text) : ''));
-        err.status = res.status;
-        throw err;
-      }
-      return res;
-    } catch (err) {
-      clearTimeout(id);
-      // Normalize abort errors
-      if (err.name === 'AbortError') throw new Error('timeout');
-      throw err;
-    }
-  }
-
-  /***********************
-   * Other helpers (SVG restart for success)
-   ***********************/
-  function restartStroke(svgSelector) {
-    const svg = document.querySelector(svgSelector);
-    if (!svg) return;
-    svg.classList.remove("draw");
-    void svg.getBoundingClientRect();
-    svg.classList.add("draw");
-  }
-
-  function showSuccess() {
-    document.getElementById("loader").style.display = "none";
-    const box = document.getElementById("successBox");
-    box.style.display = "block";
-    setTimeout(() => {
-      box.classList.add("show");
-      restartStroke("#successSvg");
-    }, 20);
-  }
-
-  /***********************
-   * Verify button handler (uses timeout-aware fetch)
-   ***********************/
-  document.getElementById("verifyBtn").addEventListener("click", async function() {
-    if (invalidShown) return;
-
-    // quick client-side online check
-    if (!navigator.onLine) {
-      showAlert({ title: "No Internet Connection!", body: "Please check your network and try again." });
-      return;
-    }
-
-    const val = document.getElementById("captchaInput").value;
-    if (val !== captcha) {
-      document.getElementById("error").textContent = "Incorrect";
-      return;
-    }
-
-    // show loader and blur page
-    document.getElementById("loader").style.display = "block";
-    content.classList.add("blurred");
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
-
-    if (!token) {
-      document.getElementById("loader").style.display = "none";
-      content.classList.remove("blurred");
-      showInvalid();
-      return;
-    }
-
-    let webhook;
-    try {
-      webhook = safeAtob(token);
-      if (!webhook) throw new Error('bad token');
-    } catch (e) {
-      document.getElementById("loader").style.display = "none";
-      content.classList.remove("blurred");
-      showInvalid();
-      return;
-    }
-
-    // Basic validation of webhook string pattern (keeps your original safety)
-    if (
-      !webhook.startsWith("https://appapi.bots.business/v1/bots/") ||
-      !webhook.includes("command=%2F") ||
-      !webhook.includes("user_id=")
-    ) {
-      document.getElementById("loader").style.display = "none";
-      content.classList.remove("blurred");
-      showInvalid();
-      return;
-    }
-
-    try {
-      // 1) Get the external IP (with timeout)
-      const ipRes = await fetchWithTimeout("https://api.ipify.org?format=json", {}, 6000);
-      const ipJson = await ipRes.json();
-      const ip = ipJson.ip;
-
-      // 2) Check VPN/proxy using your server-side endpoint (with timeout)
-      // If server returns vpn:true -> show alert (VPN detected)
-      const vpnRes = await fetchWithTimeout("/api/ipcheck?ip=" + encodeURIComponent(ip), {}, 8000);
-      const vpnData = await vpnRes.json();
-      const vpnOn = vpnData.raw?.vpn || vpnData.raw?.tor || vpnData.raw?.active_vpn || vpnData.raw?.active_tor || vpnData.vpn;
-
-      if (vpnOn) {
-        document.getElementById("loader").style.display = "none";
-        content.classList.remove("blurred");
-        // Use ALERT modal to show vpn message
-        showAlert({ title: "VPN or Proxy Detected!", body: "Please disable your VPN or refresh your internet and try again." });
-        return;
-      }
-
-      // 3) Get more IP info (best-effort; timeout)
-      let ipInfo = { ip };
-      try {
-        const ipInfoRes = await fetchWithTimeout(`https://ipwho.is/${encodeURIComponent(ip)}`, {}, 6000);
-        ipInfo = await ipInfoRes.json();
-      } catch (e) {
-        // not fatal — continue with minimal info
-      }
-
-      const dataToSend = {
-        ip: ipInfo.ip,
-        country: ipInfo.country,
-        countryCode: ipInfo.country_code,
-        callingCode: ipInfo.calling_code,
-        timezone: ipInfo.timezone?.id
-      };
-
-      // 4) Send to your backend which forwards to the webhook URL (with timeout)
-      await fetchWithTimeout("/api/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ webhook, data: dataToSend })
-      }, 8000);
-
-      // success
-      showSuccess();
-    } catch (err) {
-      console.error('Verification/network error:', err);
-      document.getElementById("loader").style.display = "none";
-      content.classList.remove("blurred");
-
-      // Decide message by error type:
-      if (err.message === 'offline' || err.message === 'timeout' || err.name === 'TypeError' || err.message === 'Failed to fetch') {
-        showAlert({ title: "Something went wrong!", body: "Please check your Internet connection and try again" });
-      } else {
-        // generic fallback
-        showAlert({ title: "Something went wrong!", body: "Please check your Internet connection and try again" });
-      }
-    }
-  });
-
-  /***********************
-   * Init: token-only validation (no validateTokenFromUrl)
-   * We only check presence + decoding to webhook string + simple pattern.
-   ***********************/
-  (function initPage() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    if (!token) {
-      // nothing to do
-      showInvalid();
-      return;
-    }
-    const decoded = safeAtob(token);
-    if (!decoded) {
-      showInvalid();
-      return;
-    }
-    // Basic webhook pattern check: same as runtime validation earlier
-    if (
-      !decoded.startsWith("https://appapi.bots.business/v1/bots/") ||
-      !decoded.includes("command=%2F") ||
-      !decoded.includes("user_id=")
-    ) {
-      showInvalid();
-      return;
-    }
-
-    // good: keep captcha visible, restore original background
-    document.body.style.background = "linear-gradient(180deg, #0d1b2a, #1b263b, #0d1b2a)";
-    // prepare SVG draw classes (if needed)
-    const svg = document.getElementById("successSvg"); if (svg) svg.classList.add("draw");
-  })();
-
-  /* safety: block context menu & some shortcuts like original */
-  document.addEventListener("contextmenu", e => e.preventDefault());
-  document.addEventListener("keydown", e => {
-    if ((e.ctrlKey || e.metaKey) && ["c","u","s","p"].includes(e.key.toLowerCase())) e.preventDefault();
-  });
+  document.getElementById("ok-btn").onclick = function () {
+    // INSTANT REMOVE — NO FADE, NO TRANSITION
+    document.getElementById("blur-bg").style.display = "none";
+  };
 </script>
+
 </body>
 </html>
