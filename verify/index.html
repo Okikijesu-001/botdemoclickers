@@ -77,8 +77,18 @@
     margin-left: auto;
     margin-right: auto;
     transition: background 0.3s;
+    box-shadow: none; /* ensure no shadow by default */
   }
   .btn:hover { background: #1b2f5a; }
+
+  /* Remove any focus/active outline or shadow for the verify button */
+  .btn:focus,
+  .btn:active,
+  .btn:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
   .blurred { filter: blur(6px); pointer-events: none; }
 
   /* --- REPLACED loader: use your LOADING code (dots) --- */
@@ -93,7 +103,8 @@
   }
   :root{
     --loader-size: 48px;
-    --loader-color: #0d1b2a; /* changed to website background color (first gradient color) */
+    /* using the website background color (first gradient color) */
+    --loader-color: #0d1b2a;
     --loader-duration: 1.2s;
   }
   .dots{display:flex;gap:8px;align-items:center}
@@ -101,6 +112,7 @@
     width:calc(var(--loader-size)/5);
     height:calc(var(--loader-size)/5);
     border-radius:50%;
+    /* ensure dots use the site background color */
     background:var(--loader-color);
     opacity:0.85;
     transform:translateY(0);
@@ -460,18 +472,21 @@
     // show overlay and add modal "show" class so it pushes out (same visual behavior as success-box)
     overlay.style.display = 'flex';
     overlay.setAttribute('aria-hidden', 'false');
-    modal.classList.add('show');      // <-- ADDED: apply push-out effect
+    modal.classList.add('show');
     okBtn.focus();
     document.addEventListener('keydown', handleKey);
   }
   function closeAlert() {
     // hide modal push-out class first (so it can animate)
-    modal.classList.remove('show');   // <-- ADDED: remove show class
-    // allow the transition to run a bit before fully hiding overlay - but keep behavior consistent:
-    // remove overlay/display immediately to match previous behavior while still removing 'show' class
-    overlay.style.display = 'none';
-    overlay.setAttribute('aria-hidden', 'true');
-    content.classList.remove('blurred');
+    modal.classList.remove('show');
+
+    // allow transition to finish before hiding overlay and removing blur so the push-out is visible
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      overlay.setAttribute('aria-hidden', 'true');
+      content.classList.remove('blurred');
+    }, 450); // matches CSS transition duration (.45s)
+
     document.removeEventListener('keydown', handleKey);
     if (lastFocused) lastFocused.focus();
   }
