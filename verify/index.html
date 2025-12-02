@@ -45,7 +45,19 @@
     font-weight: bold;
     font-size: 1.5em;
     user-select: none;
+    -webkit-tap-highlight-color: transparent; /* avoid tap highlight on mobile */
   }
+  /* Prevent any visual feedback (shadow/light/transform) when clicking/focusing the refresh */
+  .captcha-refresh:active,
+  .captcha-refresh:focus,
+  .captcha-refresh:focus-visible {
+    outline: none;
+    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
   .input-wrapper {
     margin-bottom: 10px;
   }
@@ -277,6 +289,17 @@
     transition: transform 160ms ease, box-shadow 160ms ease;
     transform: translateZ(0);
   }
+  /* remove visual feedback on OK click/focus — immediate no-shadow/light */
+  .btn-ok:active,
+  .btn-ok:focus,
+  .btn-ok:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
   .btn-ok:active{ transform: translateY(1px) scale(.995); }
   .btn-ok:hover{ box-shadow: 0 10px 30px rgba(239,45,45,0.28); }
 
@@ -488,15 +511,13 @@
     document.addEventListener('keydown', handleKey);
   }
   function closeAlert() {
-    // hide modal push-out class first (so it can animate)
+    // Remove the "show" class so modal state is reset (no waiting)
     modal.classList.remove('show');
 
-    // allow transition to finish before hiding overlay and removing blur so the push-out is visible
-    setTimeout(() => {
-      overlay.style.display = 'none';
-      overlay.setAttribute('aria-hidden', 'true');
-      content.classList.remove('blurred');
-    }, 450); // matches CSS transition duration (.45s)
+    // IMMEDIATE hide overlay and remove blur (user requested instant removal)
+    overlay.style.display = 'none';
+    overlay.setAttribute('aria-hidden', 'true');
+    content.classList.remove('blurred');
 
     document.removeEventListener('keydown', handleKey);
     if (lastFocused) lastFocused.focus();
