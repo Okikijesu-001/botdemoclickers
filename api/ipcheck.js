@@ -36,10 +36,12 @@ export default async function handler(req, res) {
 
       // If response is success and contains proxy info
       if (data.status === "success") {
-        const vpn = data.proxy === 1 || data.isProxy === true || data.tor === 1;
+        // isproxyip returns "proxy": 0 or 1 in the success response
+        const vpn = data.proxy === 1;
         return res.status(200).json({
           success: true,
           vpn,
+          proxy: data.proxy,
           raw: data
         });
       }
