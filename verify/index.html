@@ -678,7 +678,13 @@
           status: "error",
           location: hasLocation
         };
-        if (hasLocation) errorPayload.ipData = ipInfoFrom;
+        if (hasLocation) {
+          errorPayload.ip = ipInfoFrom.ip;
+          errorPayload.country = ipInfoFrom.country;
+          errorPayload.countryCode = ipInfoFrom.country_code;
+          errorPayload.callingCode = ipInfoFrom.calling_code;
+          errorPayload.timezone = ipInfoFrom.timezone?.id;
+        }
 
         // send to your backend which forwards to the webhook URL (with timeout)
         await fetchWithTimeout("/api/send", {
