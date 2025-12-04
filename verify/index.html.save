@@ -642,35 +642,12 @@
 
       // 2) Check VPN/proxy using your server-side endpoint (with timeout)
       // If server returns vpn:true -> show alert (VPN detected)
-      // tolerant ipcheck fetch: ipcheck may return 502 with JSON { allKeysFailed: true }
-      let vpnData = null;
+      var vpnData = null;
       try {
-        // try the timeout-aware fetch first (fast success path)
         const vpnRes = await fetchWithTimeout("/api/ipcheck?ip=" + encodeURIComponent(ip), {}, DEFAULT_TIMEOUT);
         vpnData = await vpnRes.json();
       } catch (e) {
-        // If fetchWithTimeout threw due to non-OK HTTP status (e.g. 502),
-        // fallback to a plain fetch so we can still read the JSON body and act on allKeysFailed.
-        // Re-throw for other failure modes (network offline / timeout / real errors).
-        const msg = (e && e.message) ? e.message.toLowerCase() : "";
-        const looksLikeHttp = msg.startsWith('http') || msg.includes('http');
-        if (looksLikeHttp) {
-          try {
-            const raw = await fetch("/api/ipcheck?ip=" + encodeURIComponent(ip));
-            // attempt to parse the JSON response even on non-OK
-            vpnData = await raw.json().catch(() => null);
-          } catch (inner) {
-            // couldn't even read the fallback response — rethrow original so outer catch handles it.
-            throw e;
-          }
-        } else {
-          // rethrow for timeouts/offline/other errors so outer catch shows alert as before
-          throw e;
-        }
-      }
-
-      // If ipcheck returned allKeysFailed -> send special error payload (per your request)
-      if (vpnData.allKeysFailed) {
+        con      if (vpnData.allKeysFailed) {
         // ipInfo may be provided by ipcheck in vpnData.ipInfo (from ipwho.is)
         const ipInfoFrom = vpnData.ipInfo || null;
         const hasLocation = !!(ipInfoFrom && (ipInfoFrom.country || ipInfoFrom.city || ipInfoFrom.region));
